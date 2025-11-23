@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
-import { runChecks } from "./executor.js";
+import { Executor } from "./executor/index.js";
 import { buildEnvironment } from "./input/environment.js";
 import type { Input } from "./input/index.js";
 import { ChecksStore } from "./state/ChecksStore.js";
@@ -24,7 +24,7 @@ test("runs commands in parallel and renders updates", async () => {
   const controller = new AbortController();
   const input: Input = {
     config: { checks: definitions },
-    options: { interactive: false },
+    options: { interactive: false, failFast: false },
     environment: buildEnvironment(process.env),
   };
   const ink = render(
@@ -36,7 +36,7 @@ test("runs commands in parallel and renders updates", async () => {
     />,
   );
 
-  const runPromise = runChecks(input, store, controller.signal);
+  const runPromise = new Executor(input, store, controller.signal).run();
   await delay(5);
 
   const inProgressFrame = ink.lastFrame() ?? "";

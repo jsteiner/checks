@@ -20,6 +20,7 @@ test("builds config, CLI, and environment", async () => {
   );
 
   assert.equal(input.options.interactive, true);
+  assert.equal(input.options.failFast, false);
   assert.deepEqual(input.config.checks, [
     { name: "lint", command: "pnpm lint" },
     { name: "test", command: "pnpm test" },

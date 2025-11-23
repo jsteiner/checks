@@ -2,7 +2,7 @@
 
 import process from "node:process";
 import { render } from "ink";
-import { runChecks } from "./executor.js";
+import { Executor } from "./executor/index.js";
 import { FILE_CONFIG_PATH, FileConfigError } from "./input/fileConfig.js";
 import { buildInput, type Input } from "./input/index.js";
 import { ChecksStore } from "./state/ChecksStore.js";
@@ -37,6 +37,7 @@ async function main(
   }
 
   const store = new ChecksStore(input.config.checks, startTime);
+  const executor = new Executor(input, store, abortController.signal);
   const ink = render(
     <App
       store={store}
@@ -52,10 +53,7 @@ async function main(
 
   try {
     const exitPromise = ink.waitUntilExit();
-    await Promise.all([
-      runChecks(input, store, abortController.signal),
-      store.waitForCompletion(),
-    ]);
+    await Promise.all([executor.run(), store.waitForCompletion()]);
     await exitPromise;
   } catch (error) {
     console.error(
