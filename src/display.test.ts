@@ -1,45 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatLog } from "./display.js";
+import { filterLog, formatDuration, formatLog } from "./display.js";
 import type { LogEntry } from "./types.js";
 
-const sampleLog: LogEntry[] = [
-  { stream: "stdout", text: "line1\nline2\n" },
-  { stream: "stderr", text: "error1\r\nerror2" },
-  { stream: "stdout", text: "\n" },
-];
-
-test("formats all lines with default options", () => {
-  const result = formatLog(sampleLog);
-  assert.equal(
-    result,
-    ["line1", "line2", "", "error1", "error2", "", ""].join("\n"),
-  );
+test("formatDuration shows seconds with two decimals", () => {
+  assert.equal(formatDuration(0), "0.00s");
+  assert.equal(formatDuration(1234), "1.23s");
+  assert.equal(formatDuration(1999), "2.00s");
 });
 
-test("filters by single stream", () => {
-  const result = formatLog(sampleLog, { stream: "stderr" });
-  assert.equal(result, ["error1", "error2"].join("\n"));
+test("formatLog prefixes lines and filters streams", () => {
+  const log: LogEntry[] = [
+    { stream: "stdout", text: "out line" },
+    { stream: "stderr", text: "err line" },
+  ];
+
+  const prefixed = formatLog(log, { prefix: "  " });
+  assert.deepEqual(prefixed, ["  out line", "  err line"]);
+
+  const stderrOnly = formatLog(log, { stream: "stderr", prefix: "-" });
+  assert.deepEqual(stderrOnly, ["-err line"]);
+
+  const filtered = filterLog(log, "stderr");
+  assert.deepEqual(filtered, [{ stream: "stderr", text: "err line" }]);
 });
 
-test("filters by multiple streams", () => {
-  const result = formatLog(sampleLog, { stream: ["stdout", "stderr"] });
-  assert.equal(
-    result,
-    ["line1", "line2", "", "error1", "error2", "", ""].join("\n"),
-  );
-});
+test("formatLog retains empty lines when prefixing", () => {
+  const log: LogEntry[] = [{ stream: "stdout", text: "line1\n\nline3" }];
 
-test("applies prefix to each line", () => {
-  const result = formatLog(sampleLog, { prefix: "> " });
-  assert.equal(
-    result,
-    ["> line1", "> line2", "> ", "> error1", "> error2", "> ", "> "].join("\n"),
-  );
-});
+  const output = formatLog(log, { prefix: "*" });
 
-test("keeps entries with only whitespace", () => {
-  const log: LogEntry[] = [{ stream: "stdout", text: "   " }];
-  const result = formatLog(log);
-  assert.equal(result, "   ");
+  assert.deepEqual(output, ["*line1", "*", "*line3"]);
 });

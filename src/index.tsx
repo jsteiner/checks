@@ -3,7 +3,8 @@
 import process from "node:process";
 import { render } from "ink";
 import { runChecks } from "./executor.js";
-import { ConfigError, type LoadedConfig, loadConfig } from "./input/config.js";
+import { FILE_CONFIG_PATH, FileConfigError } from "./input/fileConfig.js";
+import { buildInput, type Input } from "./input/index.js";
 import { ChecksStore } from "./state/ChecksStore.js";
 import { App } from "./ui/App.js";
 
@@ -14,32 +15,48 @@ const EXIT_CODES = {
   aborted: 3,
 } as const;
 
-async function main() {
+async function main(
+  configPath: string = FILE_CONFIG_PATH,
+  argv: string[] = process.argv,
+  env: NodeJS.ProcessEnv = process.env,
+) {
   const startTime = Date.now();
   const abortController = new AbortController();
   installInterruptHandler(abortController);
 
-  let config: LoadedConfig;
+  let input: Input;
   try {
-    config = await loadConfig();
+    input = await buildInput(configPath, argv, env);
   } catch (error) {
     const message =
-      error instanceof ConfigError
+      error instanceof FileConfigError
         ? error.message
         : "Unexpected error while loading configuration";
     console.error(message);
     process.exit(EXIT_CODES.orchestratorError);
   }
 
-  const store = new ChecksStore(config.checks, startTime);
-  const ink = render(<App store={store} />);
+  const store = new ChecksStore(input.config.checks, startTime);
+  const ink = render(
+    <App
+      store={store}
+      interactive={input.options.interactive}
+      abortSignal={abortController.signal}
+      onAbort={() => {
+        if (!abortController.signal.aborted) {
+          abortController.abort();
+        }
+      }}
+    />,
+  );
 
   try {
+    const exitPromise = ink.waitUntilExit();
     await Promise.all([
-      runChecks(config.checks, store, abortController.signal),
+      runChecks(input, store, abortController.signal),
       store.waitForCompletion(),
     ]);
-    await ink.waitUntilExit();
+    await exitPromise;
   } catch (error) {
     console.error(
       error instanceof Error ? error.message : "Unexpected runtime error",

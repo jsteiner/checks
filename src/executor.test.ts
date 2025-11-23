@@ -1,16 +1,33 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
-import { formatLog } from "./display.js";
 import { runChecks } from "./executor.js";
+import type { Environment } from "./input/environment.js";
+import { buildEnvironment } from "./input/environment.js";
+import type { Input } from "./input/index.js";
 import { ChecksStore } from "./state/ChecksStore.js";
+
+function createInput(
+  checks: Input["config"]["checks"],
+  env?: NodeJS.ProcessEnv | Environment,
+): Input {
+  return {
+    config: { checks },
+    options: { interactive: false },
+    environment: buildEnvironment(env ?? process.env),
+  };
+}
 
 test("marks successful commands as passed", async () => {
   const command = `${process.execPath} -e "process.exit(0)"`;
   const store = new ChecksStore([{ name: "success", command }], Date.now());
   const controller = new AbortController();
 
-  await runChecks([{ name: "success", command }], store, controller.signal);
+  await runChecks(
+    createInput([{ name: "success", command }]),
+    store,
+    controller.signal,
+  );
   const snapshot = store.getSnapshot();
   const first = snapshot[0];
   assert.ok(first);
@@ -23,13 +40,17 @@ test("marks failing commands as failed", async () => {
   const store = new ChecksStore([{ name: "fail", command }], Date.now());
   const controller = new AbortController();
 
-  await runChecks([{ name: "fail", command }], store, controller.signal);
+  await runChecks(
+    createInput([{ name: "fail", command }]),
+    store,
+    controller.signal,
+  );
   const snapshot = store.getSnapshot();
   const first = snapshot[0];
   assert.ok(first);
   assert.equal(first.result.status, "failed");
   assert.equal(first.result.exitCode, 1);
-  assert.match(formatLog(first.log, { stream: "stderr" }), /fail/);
+  assert.deepEqual(first.log, [{ stream: "stderr", text: "fail\n" }]);
   assert.equal(first.result.errorMessage, null);
 });
 
@@ -41,7 +62,7 @@ test("handles spawn errors by marking the check as failed", async () => {
   const controller = new AbortController();
 
   await runChecks(
-    [{ name: "spawn-error", command: "does-not-matter" }],
+    createInput([{ name: "spawn-error", command: "does-not-matter" }]),
     store,
     controller.signal,
     {
@@ -55,7 +76,7 @@ test("handles spawn errors by marking the check as failed", async () => {
   const first = snapshot[0];
   assert.ok(first);
   assert.equal(first.result.status, "failed");
-  assert.match(formatLog(first.log, { stream: "stderr" }), /spawn failed/);
+  assert.deepEqual(first.log, [{ stream: "stderr", text: "spawn failed\n" }]);
   assert.equal(first.result.errorMessage, "spawn failed");
 });
 
@@ -67,11 +88,10 @@ test("handles non-Error spawn throw with a fallback message", async () => {
   const controller = new AbortController();
 
   await runChecks(
-    [{ name: "non-error-spawn", command: "irrelevant" }],
+    createInput([{ name: "non-error-spawn", command: "irrelevant" }]),
     store,
     controller.signal,
     {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       spawn: () => {
         throw "not-an-error";
       },
@@ -82,7 +102,7 @@ test("handles non-Error spawn throw with a fallback message", async () => {
   assert.ok(first);
   assert.equal(first.result.status, "failed");
   assert.equal(first.result.errorMessage, "Spawn failed");
-  assert.match(formatLog(first.log, { stream: "stderr" }), /Spawn failed/);
+  assert.deepEqual(first.log, [{ stream: "stderr", text: "Spawn failed\n" }]);
 });
 
 test("marks checks as aborted when signal is already aborted", async () => {
@@ -92,12 +112,17 @@ test("marks checks as aborted when signal is already aborted", async () => {
   controller.abort();
 
   let spawnCalled = false;
-  await runChecks([{ name: "aborted", command }], store, controller.signal, {
-    spawn: () => {
-      spawnCalled = true;
-      throw new Error("should not spawn when aborted");
+  await runChecks(
+    createInput([{ name: "aborted", command }]),
+    store,
+    controller.signal,
+    {
+      spawn: () => {
+        spawnCalled = true;
+        throw new Error("should not spawn when aborted");
+      },
     },
-  });
+  );
 
   const first = store.getSnapshot()[0];
   assert.equal(spawnCalled, false);
@@ -125,7 +150,7 @@ test("aborts running checks when the signal fires", async () => {
   };
 
   const promise = runChecks(
-    [{ name: "abort-running", command: "irrelevant" }],
+    createInput([{ name: "abort-running", command: "irrelevant" }]),
     store,
     controller.signal,
     { spawn },
@@ -155,7 +180,7 @@ test("marks checks aborted when the process exits from a signal", async () => {
   };
 
   await runChecks(
-    [{ name: "signal-close", command: "irrelevant" }],
+    createInput([{ name: "signal-close", command: "irrelevant" }]),
     store,
     controller.signal,
     { spawn },
@@ -175,10 +200,17 @@ test("forces color support for spawned commands", async () => {
     const store = new ChecksStore([{ name: "color", command }], Date.now());
     const controller = new AbortController();
 
-    await runChecks([{ name: "color", command }], store, controller.signal);
+    const environment = buildEnvironment(process.env);
+
+    await runChecks(
+      createInput([{ name: "color", command }], environment),
+      store,
+      controller.signal,
+    );
+
     const first = store.getSnapshot()[0];
     assert.ok(first);
-    assert.equal(formatLog(first.log, { stream: "stdout" }).trim(), "1");
+    assert.deepEqual(first.log, [{ stream: "stdout", text: "1\n" }]);
   } finally {
     if (originalForceColor === undefined) {
       delete process.env["FORCE_COLOR"];

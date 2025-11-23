@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn as defaultSpawn } from "node:child_process";
-import { environment } from "./input/environment.js";
+import type { Environment } from "./input/environment.js";
+import type { Input } from "./input/index.js";
 import type { ChecksStore } from "./state/ChecksStore.js";
 import type { CheckDefinition } from "./types.js";
 
@@ -10,14 +11,14 @@ export interface ExecutorOptions {
 }
 
 export async function runChecks(
-  checks: CheckDefinition[],
+  input: Input,
   store: ChecksStore,
   signal: AbortSignal,
   options: ExecutorOptions = {},
 ): Promise<void> {
-  const spawnFn = options.spawn ?? createDefaultSpawner();
+  const spawnFn = options.spawn ?? createDefaultSpawner(input.environment);
   await Promise.all(
-    checks.map((check, index) =>
+    input.config.checks.map((check, index) =>
       executeSingleCheck(check, index, store, signal, spawnFn),
     ),
   );
@@ -93,11 +94,11 @@ function executeSingleCheck(
   });
 }
 
-function createDefaultSpawner(): SpawnFunction {
+function createDefaultSpawner(env: Environment): SpawnFunction {
   return (command: string) =>
     defaultSpawn(command, {
       shell: true,
       stdio: ["ignore", "pipe", "pipe"],
-      env: environment,
+      env,
     });
 }

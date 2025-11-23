@@ -3,6 +3,8 @@ import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
 import { runChecks } from "./executor.js";
+import { buildEnvironment } from "./input/environment.js";
+import type { Input } from "./input/index.js";
 import { ChecksStore } from "./state/ChecksStore.js";
 import { App } from "./ui/App.js";
 
@@ -19,10 +21,22 @@ test("runs commands in parallel and renders updates", async () => {
   ];
 
   const store = new ChecksStore(definitions, Date.now());
-  const ink = render(<App store={store} />);
   const controller = new AbortController();
+  const input: Input = {
+    config: { checks: definitions },
+    options: { interactive: false },
+    environment: buildEnvironment(process.env),
+  };
+  const ink = render(
+    <App
+      store={store}
+      interactive={input.options.interactive}
+      abortSignal={controller.signal}
+      onAbort={() => controller.abort()}
+    />,
+  );
 
-  const runPromise = runChecks(definitions, store, controller.signal);
+  const runPromise = runChecks(input, store, controller.signal);
   await delay(5);
 
   const inProgressFrame = ink.lastFrame() ?? "";
