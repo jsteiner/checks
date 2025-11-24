@@ -9,9 +9,6 @@ import type { HotkeyConfig } from "./types.js";
 
 interface CheckListViewProps {
   checks: CheckState[];
-  nameWidth: number;
-  indexWidth: number;
-  commandWidth: number;
   allDone: boolean;
   summary: ReturnType<ChecksStore["summary"]>;
   interactive: boolean;
@@ -20,9 +17,6 @@ interface CheckListViewProps {
 
 export function CheckListView({
   checks,
-  nameWidth,
-  indexWidth,
-  commandWidth,
   allDone,
   summary,
   interactive,
@@ -44,9 +38,6 @@ export function CheckListView({
           <Check
             check={check}
             visibleStreams={check.result.status === "failed" ? "all" : "none"}
-            nameWidth={nameWidth}
-            indexWidth={indexWidth}
-            commandWidth={commandWidth}
           />
         </Box>
       ))}

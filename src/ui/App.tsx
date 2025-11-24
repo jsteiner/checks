@@ -9,6 +9,7 @@ import {
 import type { ChecksStore } from "../state/ChecksStore.js";
 import { CheckListView } from "./CheckListView.js";
 import { FocusedView } from "./FocusedView.js";
+import { LayoutProvider } from "./LayoutContext.js";
 import type { HotkeyConfig, VisibleStreams } from "./types.js";
 
 interface AppProps {
@@ -31,15 +32,6 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   const maxFocusableIndex = focusableCount - 1;
   const focusedCheck =
     focusedIndex === null ? null : (checks[focusedIndex] ?? null);
-  const nameWidth = useMemo(
-    () => checks.reduce((max, check) => Math.max(max, check.name.length), 0),
-    [checks],
-  );
-  const commandWidth = useMemo(
-    () => checks.reduce((max, check) => Math.max(max, check.command.length), 0),
-    [checks],
-  );
-  const indexWidth = Math.max(1, String(checks.length).length);
   const allDone = checks.every((check) => check.result.status !== "running");
   const summary = store.summary();
 
@@ -78,33 +70,27 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
     return () => abortSignal.removeEventListener("abort", onAbortSignal);
   }, [abortSignal, exit]);
 
-  if (focusedCheck) {
-    return (
-      <FocusedView
-        check={focusedCheck}
-        visibleStreams={visibleStreams}
-        nameWidth={nameWidth}
-        indexWidth={indexWidth}
-        commandWidth={commandWidth}
-        onVisibleStreamsChange={setVisibleStreams}
-        onFocusChange={onFocusChange}
-        globalHotkeys={globalHotkeys}
-        interactive={interactive}
-      />
-    );
-  }
-
   return (
-    <CheckListView
-      checks={checks}
-      nameWidth={nameWidth}
-      indexWidth={indexWidth}
-      commandWidth={commandWidth}
-      allDone={allDone}
-      summary={summary}
-      interactive={interactive}
-      globalHotkeys={globalHotkeys}
-    />
+    <LayoutProvider checks={checks}>
+      {focusedCheck ? (
+        <FocusedView
+          check={focusedCheck}
+          visibleStreams={visibleStreams}
+          onVisibleStreamsChange={setVisibleStreams}
+          onFocusChange={onFocusChange}
+          globalHotkeys={globalHotkeys}
+          interactive={interactive}
+        />
+      ) : (
+        <CheckListView
+          checks={checks}
+          allDone={allDone}
+          summary={summary}
+          interactive={interactive}
+          globalHotkeys={globalHotkeys}
+        />
+      )}
+    </LayoutProvider>
   );
 }
 

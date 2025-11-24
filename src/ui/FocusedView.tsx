@@ -8,9 +8,6 @@ import type { HotkeyConfig, VisibleStreams } from "./types.js";
 interface FocusedViewProps {
   check: CheckState;
   visibleStreams: VisibleStreams;
-  nameWidth: number;
-  indexWidth: number;
-  commandWidth: number;
   onVisibleStreamsChange: (streams: VisibleStreams) => void;
   onFocusChange: (nextIndex: number | null) => void;
   globalHotkeys: HotkeyConfig[];
@@ -20,9 +17,6 @@ interface FocusedViewProps {
 export function FocusedView({
   check,
   visibleStreams,
-  nameWidth,
-  indexWidth,
-  commandWidth,
   onVisibleStreamsChange,
   onFocusChange,
   globalHotkeys,
@@ -42,13 +36,7 @@ export function FocusedView({
 
   return (
     <Box flexDirection="column">
-      <Check
-        check={check}
-        visibleStreams={visibleStreams}
-        nameWidth={nameWidth}
-        indexWidth={indexWidth}
-        commandWidth={commandWidth}
-      />
+      <Check check={check} visibleStreams={visibleStreams} />
       <Box marginTop={1}>
         <Legend hotkeys={hotkeys} interactive={interactive} />
       </Box>

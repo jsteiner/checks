@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { formatCheckDurationLabel } from "../display.js";
 import type { CheckState, CheckStatus } from "../types.js";
+import { useLayout } from "./LayoutContext.js";
 
 const STATUS_LABELS: Record<CheckStatus, string> = {
   aborted: "aborted",
@@ -23,17 +24,10 @@ const STATUS_COLORS: Record<CheckStatus, string> = {
 
 interface CheckRowProps {
   check: CheckState;
-  indexWidth: number;
-  nameWidth: number;
-  commandWidth: number;
 }
 
-export function CheckRow({
-  check,
-  indexWidth,
-  nameWidth,
-  commandWidth,
-}: CheckRowProps) {
+export function CheckRow({ check }: CheckRowProps) {
+  const { indexWidth, nameWidth, commandWidth } = useLayout();
   const status = check.result.status;
   const indexLabel = `${check.index + 1}.`.padEnd(indexWidth + 2, " ");
   const statusLabel = STATUS_LABELS[status].padEnd(STATUS_WIDTH, " ");

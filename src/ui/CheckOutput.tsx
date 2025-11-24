@@ -1,19 +1,16 @@
 import { Box, Text } from "ink";
 import { filterLog, formatLog } from "../display.js";
 import type { CheckState } from "../types.js";
+import { useLayout } from "./LayoutContext.js";
 import type { VisibleStreams } from "./types.js";
 
 interface CheckOutputProps {
   check: CheckState;
   visibleStreams: VisibleStreams;
-  indexWidth: number;
 }
 
-export function CheckOutput({
-  check,
-  visibleStreams,
-  indexWidth,
-}: CheckOutputProps) {
+export function CheckOutput({ check, visibleStreams }: CheckOutputProps) {
+  const { indexWidth } = useLayout();
   if (visibleStreams === "none") {
     return null;
   }

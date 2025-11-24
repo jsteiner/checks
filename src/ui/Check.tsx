@@ -7,31 +7,13 @@ import type { VisibleStreams } from "./types.js";
 interface CheckProps {
   check: CheckState;
   visibleStreams: VisibleStreams;
-  nameWidth: number;
-  indexWidth: number;
-  commandWidth: number;
 }
 
-export function Check({
-  check,
-  visibleStreams,
-  nameWidth,
-  indexWidth,
-  commandWidth,
-}: CheckProps) {
+export function Check({ check, visibleStreams }: CheckProps) {
   return (
     <Box flexDirection="column">
-      <CheckRow
-        check={check}
-        indexWidth={indexWidth}
-        nameWidth={nameWidth}
-        commandWidth={commandWidth}
-      />
-      <CheckOutput
-        check={check}
-        visibleStreams={visibleStreams}
-        indexWidth={indexWidth}
-      />
+      <CheckRow check={check} />
+      <CheckOutput check={check} visibleStreams={visibleStreams} />
     </Box>
   );
 }
