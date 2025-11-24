@@ -61,25 +61,31 @@ async function main(
     console.error(
       error instanceof Error ? error.message : "Unexpected runtime error",
     );
-    process.exit(EXIT_CODES.orchestratorError);
+    exitWithNewline(EXIT_CODES.orchestratorError);
   }
 
   const summary = store.summary();
   if (abortController.signal.aborted || summary.aborted > 0) {
-    process.exit(EXIT_CODES.aborted);
+    exitWithNewline(EXIT_CODES.aborted);
   }
 
   if (summary.failed > 0) {
-    process.exit(EXIT_CODES.checksFailed);
+    exitWithNewline(EXIT_CODES.checksFailed);
   }
 
-  process.exit(EXIT_CODES.success);
+  exitWithNewline(EXIT_CODES.success);
 }
 
 function installInterruptHandler(controller: AbortController) {
   process.once("SIGINT", () => {
     controller.abort();
   });
+}
+
+function exitWithNewline(exitCode: number) {
+  // Add a separator so downstream pnpm/npm lifecycle output doesn't run onto the same line.
+  process.stdout.write("\n");
+  process.exit(exitCode);
 }
 
 void main();
