@@ -10,6 +10,7 @@ interface FocusedViewProps {
   visibleStreams: VisibleStreams;
   nameWidth: number;
   indexWidth: number;
+  commandWidth: number;
   onVisibleStreamsChange: (streams: VisibleStreams) => void;
   onFocusChange: (nextIndex: number | null) => void;
   globalHotkeys: HotkeyConfig[];
@@ -21,6 +22,7 @@ export function FocusedView({
   visibleStreams,
   nameWidth,
   indexWidth,
+  commandWidth,
   onVisibleStreamsChange,
   onFocusChange,
   globalHotkeys,
@@ -45,6 +47,7 @@ export function FocusedView({
         visibleStreams={visibleStreams}
         nameWidth={nameWidth}
         indexWidth={indexWidth}
+        commandWidth={commandWidth}
       />
       <Box marginTop={1}>
         <Legend hotkeys={hotkeys} interactive={interactive} />

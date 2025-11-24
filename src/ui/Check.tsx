@@ -9,6 +9,7 @@ interface CheckProps {
   visibleStreams: VisibleStreams;
   nameWidth: number;
   indexWidth: number;
+  commandWidth: number;
 }
 
 export function Check({
@@ -16,10 +17,16 @@ export function Check({
   visibleStreams,
   nameWidth,
   indexWidth,
+  commandWidth,
 }: CheckProps) {
   return (
     <Box flexDirection="column">
-      <CheckRow check={check} indexWidth={indexWidth} nameWidth={nameWidth} />
+      <CheckRow
+        check={check}
+        indexWidth={indexWidth}
+        nameWidth={nameWidth}
+        commandWidth={commandWidth}
+      />
       <CheckOutput
         check={check}
         visibleStreams={visibleStreams}

@@ -35,6 +35,10 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
     () => checks.reduce((max, check) => Math.max(max, check.name.length), 0),
     [checks],
   );
+  const commandWidth = useMemo(
+    () => checks.reduce((max, check) => Math.max(max, check.command.length), 0),
+    [checks],
+  );
   const indexWidth = Math.max(1, String(checks.length).length);
   const allDone = checks.every((check) => check.result.status !== "running");
   const summary = store.summary();
@@ -81,6 +85,7 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
         visibleStreams={visibleStreams}
         nameWidth={nameWidth}
         indexWidth={indexWidth}
+        commandWidth={commandWidth}
         onVisibleStreamsChange={setVisibleStreams}
         onFocusChange={onFocusChange}
         globalHotkeys={globalHotkeys}
@@ -94,6 +99,7 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
       checks={checks}
       nameWidth={nameWidth}
       indexWidth={indexWidth}
+      commandWidth={commandWidth}
       allDone={allDone}
       summary={summary}
       interactive={interactive}
