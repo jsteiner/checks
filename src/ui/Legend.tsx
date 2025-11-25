@@ -77,7 +77,7 @@ function createHotkeys({
   ];
 
   if (focusedIndex !== null) {
-    hotkeys.unshift(createUnfocusHotkey({ onFocusChange }));
+    hotkeys.unshift(createUnfocusHotkey({ focusedIndex, onFocusChange }));
   }
 
   return hotkeys;
@@ -98,10 +98,7 @@ function createFocusHotkey({
     handler: (input) => {
       const index = parseNumberKey(input);
       if (index === null || index > maxFocusableIndex) return;
-      if (index === focusedIndex) {
-        onFocusChange(null);
-        return;
-      }
+      if (index === focusedIndex) return;
       onFocusChange(index);
     },
     match: (input) => {
@@ -112,14 +109,18 @@ function createFocusHotkey({
 }
 
 function createUnfocusHotkey({
+  focusedIndex,
   onFocusChange,
 }: {
+  focusedIndex: number;
   onFocusChange: (index: number | null) => void;
 }): HotkeyConfig {
+  const displayIndex = focusedIndex + 1;
   return {
-    keys: "x",
+    keys: `x or ${displayIndex}`,
     description: "unfocus",
     handler: () => onFocusChange(null),
+    match: (input) => input === "x" || parseNumberKey(input) === focusedIndex,
   };
 }
 

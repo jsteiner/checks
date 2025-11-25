@@ -33,7 +33,7 @@ test("shows unfocus action when a check is focused", async () => {
   );
 
   let frame = await waitForFrameMatch(ink, /focused=0/);
-  assert.match(frame, /x:\s+unfocus/);
+  assert.match(frame, /x or 1:\s+unfocus/);
 
   ink.rerender(
     <LegendWithLabel
@@ -72,6 +72,21 @@ test("quit hotkey does not abort when all checks are done", async () => {
 
   assert.equal(aborted, false);
   assert.equal(quit, true);
+
+  ink.unmount();
+});
+
+test("shows unfocus hotkey with the focused index", async () => {
+  const ink = render(
+    <LegendWithLabel
+      label="focused=1"
+      focusedIndex={1}
+      maxFocusableIndex={2}
+    />,
+  );
+
+  const frame = await waitForFrameMatch(ink, /focused=1/);
+  assert.match(frame, /x or 2:\s+unfocus/);
 
   ink.unmount();
 });

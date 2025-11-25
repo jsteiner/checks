@@ -39,7 +39,10 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   frame = await waitForFrameMatch(ink, /alpha/);
   assert.doesNotMatch(frame, /bravo/);
   const plainFrame = stripAnsi(frame);
-  assert.match(plainFrame, /x:\s+unfocus\s+\|\s+<n>:\s+focus\s+\|\s+q:\s+quit/);
+  assert.match(
+    plainFrame,
+    /x or 1:\s+unfocus\s+\|\s+<n>:\s+focus\s+\|\s+q:\s+quit/,
+  );
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /second/);
