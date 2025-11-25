@@ -23,7 +23,7 @@ test("shows duration to the right of the command after completion", () => {
   const { lastFrame } = renderWithLayout(<CheckRow check={check} />, [check]);
 
   const frame = stripAnsi(lastFrame() ?? "");
-  assert.match(frame, /echo hi 0\.50s$/);
+  assert.match(frame, /echo hi +0\.50s$/);
 });
 
 test("omits duration while running", () => {
@@ -36,8 +36,6 @@ test("omits duration while running", () => {
 });
 
 test("pads the command so durations align", () => {
-  const paddedWidth = BASE_CHECK.command.length + 3;
-  const expectedSpacing = paddedWidth - BASE_CHECK.command.length + 1; // padding plus duration separator
   const check: CheckState = {
     ...BASE_CHECK,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
@@ -45,16 +43,26 @@ test("pads the command so durations align", () => {
   const widestCheck: CheckState = {
     ...check,
     index: 1,
-    command: BASE_CHECK.command.padEnd(paddedWidth, "!"),
+    command: `${BASE_CHECK.command}!`,
   };
-  const { lastFrame } = renderWithLayout(<CheckRow check={check} />, [
-    check,
-    widestCheck,
-  ]);
+  const { lastFrame } = renderWithLayout(
+    <>
+      <CheckRow check={check} />
+      <CheckRow check={widestCheck} />
+    </>,
+    [check, widestCheck],
+  );
 
   const frame = stripAnsi(lastFrame() ?? "");
-  const pattern = new RegExp(`echo hi {${expectedSpacing}}0\\.50s$`);
-  assert.match(frame, pattern);
+  const [firstLine, secondLine] = frame.split("\n");
+  assert.ok(firstLine);
+  assert.ok(secondLine);
+  const firstDurationIndex = firstLine.indexOf("0.50s");
+  const secondDurationIndex = secondLine.indexOf("0.50s");
+
+  assert.notEqual(firstDurationIndex, -1);
+  assert.notEqual(secondDurationIndex, -1);
+  assert.equal(firstDurationIndex, secondDurationIndex);
 });
 
 function renderWithLayout(element: ReactElement, checks: CheckState[]) {

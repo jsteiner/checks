@@ -1,4 +1,4 @@
-import { Box, Text } from "ink";
+import { Box, Spacer, Text } from "ink";
 import { formatCheckDurationLabel } from "../display.js";
 import type { CheckState, CheckStatus } from "../types.js";
 import { useLayout } from "./LayoutContext.js";
@@ -43,7 +43,8 @@ export function CheckRow({ check }: CheckRowProps) {
       <Text>{nameLabel}</Text>
       <Text> </Text>
       <Text color="gray">{commandLabel}</Text>
-      {durationLabel ? <Text color="white">{` ${durationLabel}`}</Text> : null}
+      <Spacer />
+      {durationLabel ? <Text color="grey">{` ${durationLabel}`}</Text> : null}
     </Box>
   );
 }
