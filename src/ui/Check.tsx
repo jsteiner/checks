@@ -8,12 +8,14 @@ interface CheckProps {
   showOutput: boolean;
 }
 
+const borderColor = "cyan";
+
 export function Check({ check, showOutput }: CheckProps) {
   return (
     <Box
       flexDirection="column"
       borderStyle="round"
-      borderColor="cyan"
+      borderColor={borderColor}
       paddingX={1}
       gap={1}
     >
@@ -29,7 +31,7 @@ function Divider() {
     <Box
       width="auto"
       borderStyle="single"
-      borderColor="cyan"
+      borderColor={borderColor}
       flexGrow={1}
       borderBottom={true}
       borderTop={false}
