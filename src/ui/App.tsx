@@ -1,14 +1,9 @@
 import { Box, useApp } from "ink";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useSyncExternalStore } from "react";
 import type { Suite as SuiteStore } from "../state/Suite.js";
-import type { ProjectState } from "../types.js";
 import { Check } from "./Check/index.js";
+import { useAbortExit } from "./hooks/useAbortExit.js";
+import { useFocus } from "./hooks/useFocus.js";
 import { LayoutProvider } from "./LayoutContext.js";
 import { Legend } from "./Legend.js";
 import { Suite } from "./Suite.js";
@@ -28,49 +23,15 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
     store.toState,
   );
   const { projects, isComplete } = suite;
-  const projectRanges = useMemo(
-    () => createProjectRanges(projects),
-    [projects],
-  );
-  const checks = projects.flatMap((project) => project.checks);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const focusableCount = Math.min(checks.length, 9);
-  const maxFocusableIndex = focusableCount - 1;
-  const focusedProject =
-    focusedIndex === null
-      ? null
-      : findProjectForCheckIndex(projectRanges, focusedIndex);
-  const focusedCheck =
-    focusedIndex === null ||
-    checks[focusedIndex] === undefined ||
-    focusedProject === null
-      ? null
-      : {
-          check: checks[focusedIndex],
-          project: focusedProject,
-          index: focusedIndex,
-        };
+  const {
+    checks,
+    focusedIndex,
+    focusedCheck,
+    maxFocusableIndex,
+    onFocusChange,
+  } = useFocus(projects);
 
-  const onFocusChange = useCallback((nextIndex: number | null) => {
-    setFocusedIndex(nextIndex);
-  }, []);
-
-  useEffect(() => {
-    if (!interactive && isComplete) {
-      exit();
-    }
-  }, [isComplete, exit, interactive]);
-
-  useEffect(() => {
-    if (abortSignal.aborted) {
-      exit();
-      return;
-    }
-
-    const onAbortSignal = () => exit();
-    abortSignal.addEventListener("abort", onAbortSignal);
-    return () => abortSignal.removeEventListener("abort", onAbortSignal);
-  }, [abortSignal, exit]);
+  useAbortExit({ abortSignal, exit, interactive, isComplete });
 
   return (
     <LayoutProvider checks={checks}>
@@ -102,30 +63,4 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
       ) : null}
     </LayoutProvider>
   );
-}
-
-interface ProjectRange {
-  project: ProjectState;
-  start: number;
-  end: number;
-}
-
-function createProjectRanges(projects: ProjectState[]): ProjectRange[] {
-  let start = 0;
-  return projects.map((project) => {
-    const end = start + project.checks.length;
-    const range = { project, start, end };
-    start = end;
-    return range;
-  });
-}
-
-function findProjectForCheckIndex(
-  projectRanges: ProjectRange[],
-  checkIndex: number,
-): ProjectState | null {
-  const match = projectRanges.find(
-    ({ start, end }) => checkIndex >= start && checkIndex < end,
-  );
-  return match?.project ?? null;
 }
