@@ -30,16 +30,11 @@ export function CheckListView({
   return (
     <Box flexDirection="column">
       {checks.map((check) => (
-        <Box
+        <Check
           key={check.index}
-          flexDirection="column"
-          marginBottom={check.result.status === "failed" ? 1 : 0}
-        >
-          <Check
-            check={check}
-            visibleStreams={check.result.status === "failed" ? "all" : "none"}
-          />
-        </Box>
+          check={check}
+          visibleStreams={check.result.status === "failed" ? "all" : "none"}
+        />
       ))}
       {allDone ? (
         <Box marginTop={1}>
