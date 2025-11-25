@@ -11,7 +11,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "lint:biome": "biome check --write",
+    "lint:biome": "biome check --write --error-on-warnings",
     "test": "tsx scripts/run-tests.ts",
     "checks": "pnpm build; pnpm start"
   },
