@@ -9,19 +9,22 @@ const SAMPLE_CHECKS = [
 
 test("tracks status transitions", () => {
   const store = new ChecksStore(SAMPLE_CHECKS, 0);
+  const first = store.getCheck(0);
+  const second = store.getCheck(1);
   const snapshot = store.getSnapshot();
-  const first = snapshot[0];
+  const firstState = snapshot[0];
   assert.ok(first);
-  assert.equal(first.result.status, "running");
+  assert.ok(firstState);
+  assert.equal(firstState.result.status, "running");
 
-  store.markPassed(0, 0);
+  assert.equal(first.markPassed(0), true);
   const afterSuccess = store.getSnapshot();
   const success = afterSuccess[0];
   assert.ok(success);
   assert.equal(success.result.status, "passed");
   assert.equal(success.result.exitCode, 0);
 
-  store.markFailed(1, 1, "boom");
+  assert.equal(second.markFailed(1, "boom"), true);
   const afterFailure = store.getSnapshot();
   const failure = afterFailure[1];
   assert.ok(failure);
@@ -30,7 +33,7 @@ test("tracks status transitions", () => {
   assert.equal(failure.result.errorMessage, "boom");
 
   // Terminal statuses do not get overridden
-  store.markAborted(1);
+  assert.equal(second.markAborted(), false);
   const afterAbortAttempt = store.getSnapshot();
   const stillFailure = afterAbortAttempt[1];
   assert.ok(stillFailure);
@@ -39,8 +42,8 @@ test("tracks status transitions", () => {
 
 test("summarizes run results", () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now() - 500);
-  store.markPassed(0, 0);
-  store.markFailed(1, 1, null);
+  store.getCheck(0).markPassed(0);
+  store.getCheck(1).markFailed(1, null);
 
   const summary = store.summary();
   assert.equal(summary.total, 2);
@@ -58,10 +61,10 @@ test("summary duration reflects last finished check time", () => {
   try {
     const store = new ChecksStore(SAMPLE_CHECKS, fakeNow);
     fakeNow = 125;
-    store.markPassed(0, 0);
+    store.getCheck(0).markPassed(0);
 
     fakeNow = 250;
-    store.markFailed(1, 1, null);
+    store.getCheck(1).markFailed(1, null);
 
     fakeNow = 1000;
     const summary = store.summary();
@@ -75,8 +78,8 @@ test("waitForCompletion resolves when all checks finish", async () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
   const waitPromise = store.waitForCompletion();
 
-  store.markPassed(0, 0);
-  store.markFailed(1, 1, null);
+  store.getCheck(0).markPassed(0);
+  store.getCheck(1).markFailed(1, null);
 
   const snapshot = await waitPromise;
   const [first, second] = snapshot;
@@ -87,8 +90,8 @@ test("waitForCompletion resolves when all checks finish", async () => {
 
 test("waitForCompletion resolves immediately when already complete", async () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
-  store.markPassed(0, 0);
-  store.markFailed(1, 1, null);
+  store.getCheck(0).markPassed(0);
+  store.getCheck(1).markFailed(1, null);
 
   const snapshot = await store.waitForCompletion();
   assert.equal(snapshot.length, SAMPLE_CHECKS.length);
@@ -101,11 +104,11 @@ test("does not emit when attempting to update a terminal check", () => {
     updates += 1;
   });
 
-  store.markPassed(0, 0);
+  store.getCheck(0).markPassed(0);
   assert.equal(updates, 1);
 
-  store.markFailed(0, 1, "ignored");
-  store.markAborted(0);
+  store.getCheck(0).markFailed(1, "ignored");
+  store.getCheck(0).markAborted();
   assert.equal(updates, 1);
 
   unsubscribe();
@@ -114,6 +117,6 @@ test("does not emit when attempting to update a terminal check", () => {
 test("throws when requesting an unknown check index", () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
   assert.throws(() => {
-    store.appendStdout(99, "missing");
+    store.getCheck(99);
   });
 });

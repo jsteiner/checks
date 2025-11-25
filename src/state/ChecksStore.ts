@@ -7,11 +7,15 @@ export class ChecksStore {
   private readonly startedAt: number;
   private checks: Check[];
   private snapshot: CheckState[];
+  private readonly handleCheckUpdate = () => {
+    this.emit();
+  };
 
   constructor(definitions: CheckDefinition[], startedAt: number) {
     this.startedAt = startedAt;
     this.checks = definitions.map(
-      (definition, index) => new Check(index, definition, startedAt),
+      (definition, index) =>
+        new Check(index, definition, startedAt, this.handleCheckUpdate),
     );
     this.snapshot = this.createSnapshot();
   }
@@ -23,36 +27,12 @@ export class ChecksStore {
 
   getSnapshot = (): CheckState[] => this.snapshot;
 
-  appendStdout(index: number, chunk: Buffer | string) {
-    const check = this.getCheckOrThrow(index);
-    if (check.appendStdout(chunk)) {
-      this.emit();
+  getCheck(index: number): Check {
+    const check = this.checks[index];
+    if (!check) {
+      throw new Error(`Check not found for index ${index}`);
     }
-  }
-
-  markPassed(index: number, exitCode: number | null) {
-    const check = this.getCheckOrThrow(index);
-    if (check.markPassed(exitCode)) {
-      this.emit();
-    }
-  }
-
-  markFailed(
-    index: number,
-    exitCode: number | null,
-    errorMessage: string | null,
-  ) {
-    const check = this.getCheckOrThrow(index);
-    if (check.markFailed(exitCode, errorMessage)) {
-      this.emit();
-    }
-  }
-
-  markAborted(index: number) {
-    const check = this.getCheckOrThrow(index);
-    if (check.markAborted()) {
-      this.emit();
-    }
+    return check;
   }
 
   summary(): Summary {
@@ -121,13 +101,5 @@ export class ChecksStore {
 
   private createSnapshot(): CheckState[] {
     return this.checks.map((check) => check.toState());
-  }
-
-  private getCheckOrThrow(index: number): Check {
-    const check = this.checks[index];
-    if (!check) {
-      throw new Error(`Check not found for index ${index}`);
-    }
-    return check;
   }
 }

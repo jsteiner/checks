@@ -27,8 +27,8 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
     />,
   );
 
-  store.appendStdout(0, "alpha");
-  store.appendStdout(1, "bravo");
+  store.getCheck(0).appendStdout("alpha");
+  store.getCheck(1).appendStdout("bravo");
 
   let frame = await waitForFrameMatch(ink, /<n>:\s+focus/);
 
@@ -63,8 +63,9 @@ test("shows output for failed checks in the list view", async () => {
     />,
   );
 
-  store.appendStdout(0, "problem");
-  store.markFailed(0, 1, null);
+  const check = store.getCheck(0);
+  check.appendStdout("problem");
+  check.markFailed(1, null);
 
   const frame = await waitForFrameMatch(ink, /problem/);
   assert.match(frame, /fail/);
@@ -144,8 +145,8 @@ test("exits when the abort signal is already fired", async () => {
 
 test("does not abort when quitting after completion", async () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
-  store.markPassed(0, 0);
-  store.markPassed(1, 0);
+  store.getCheck(0).markPassed(0);
+  store.getCheck(1).markPassed(0);
 
   let abortCalled = false;
   const controller = new AbortController();

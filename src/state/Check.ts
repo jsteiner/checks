@@ -16,12 +16,19 @@ export class Check {
 
   private result: CheckResult = { status: "running" };
   private log: LogEntry[] = [];
+  private readonly onUpdate: () => void;
 
-  constructor(index: number, definition: CheckDefinition, startedAt: number) {
+  constructor(
+    index: number,
+    definition: CheckDefinition,
+    startedAt: number,
+    onUpdate: () => void = () => {},
+  ) {
     this.index = index;
     this.name = definition.name;
     this.command = definition.command;
     this.startedAt = startedAt;
+    this.onUpdate = onUpdate;
   }
 
   get status(): CheckStatus {
@@ -37,6 +44,7 @@ export class Check {
     const next = chunk.toString();
     if (!next) return false;
     this.log.push({ text: next });
+    this.onUpdate();
     return true;
   }
 
@@ -47,6 +55,7 @@ export class Check {
       finishedAt: Date.now(),
       exitCode,
     };
+    this.onUpdate();
     return true;
   }
 
@@ -58,6 +67,7 @@ export class Check {
       finishedAt: Date.now(),
       exitCode,
     };
+    this.onUpdate();
     return true;
   }
 
@@ -67,6 +77,7 @@ export class Check {
       status: "aborted",
       finishedAt: Date.now(),
     };
+    this.onUpdate();
     return true;
   }
 

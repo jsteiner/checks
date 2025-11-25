@@ -8,17 +8,14 @@ import type { SpawnFunction } from "./PtyProcess.js";
 
 async function executeCheck(
   check: CheckDefinition,
-  index: number = 0,
   spawn: SpawnFunction = () => createFakeSpawnedProcess(),
   controller: AbortController = new AbortController(),
 ) {
-  const store = new ChecksStore(
-    [{ name: "check", command: "cmd" }],
-    Date.now(),
-  );
-  const executor = new CheckExecutor(store, controller.signal, spawn);
+  const store = new ChecksStore([check], Date.now());
+  const executor = new CheckExecutor(controller.signal, spawn);
+  const target = store.getCheck(0);
 
-  const status = await executor.run(check, index);
+  const status = await executor.run(target);
 
   return { controller, store, executor, status };
 }
@@ -37,7 +34,6 @@ test("returns aborted immediately when the signal is already aborted", async () 
 
   const { store, status } = await executeCheck(
     { name: "aborted", command: "noop" },
-    0,
     () => {
       spawnCalled = true;
       throw new Error("should not spawn");
@@ -61,7 +57,6 @@ test("marks passed when the child exits with code 0", async () => {
 
   const { store, status } = await executeCheck(
     { name: "success", command: "noop" },
-    0,
     spawn,
   );
   const first = store.getSnapshot()[0];
@@ -81,7 +76,6 @@ test("marks failed when the child exits with a non-zero code", async () => {
 
   const { store, status } = await executeCheck(
     { name: "fail", command: "noop" },
-    0,
     spawn,
   );
   const first = store.getSnapshot()[0];
@@ -95,7 +89,6 @@ test("marks failed when the child exits with a non-zero code", async () => {
 test("records spawn errors and fallback error messages", async () => {
   const { store, status } = await executeCheck(
     { name: "spawn-error", command: "noop" },
-    0,
     () => {
       throw new Error("spawn failed");
     },
@@ -110,7 +103,6 @@ test("records spawn errors and fallback error messages", async () => {
 
   const { store: fallbackStore, status: fallbackStatus } = await executeCheck(
     { name: "non-error", command: "noop" },
-    0,
     () => {
       throw "not-an-error";
     },
@@ -140,7 +132,6 @@ test("aborts a running check when the abort signal fires", async () => {
 
   const promise = executeCheck(
     { name: "abort", command: "noop" },
-    0,
     spawn,
     controller,
   );
@@ -163,7 +154,6 @@ test("marks aborted when the child closes with a signal", async () => {
 
   const { store, status } = await executeCheck(
     { name: "signal-close", command: "noop" },
-    0,
     spawn,
   );
   const first = store.getSnapshot()[0];
@@ -190,7 +180,6 @@ test("skips killing when the child is already marked killed", async () => {
 
   const promise = executeCheck(
     { name: "already-killed", command: "noop" },
-    0,
     spawn,
     controller,
   );

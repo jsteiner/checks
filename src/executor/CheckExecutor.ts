@@ -1,5 +1,5 @@
-import type { ChecksStore } from "../state/ChecksStore.js";
-import type { CheckDefinition, CheckStatus } from "../types.js";
+import type { Check } from "../state/Check.js";
+import type { CheckStatus } from "../types.js";
 import type { SpawnedProcess, SpawnFunction } from "./PtyProcess.js";
 
 export class CheckExecutor {
@@ -7,14 +7,13 @@ export class CheckExecutor {
   private child: SpawnedProcess | undefined;
 
   constructor(
-    private readonly store: ChecksStore,
     private readonly signal: AbortSignal,
     private readonly spawnFn: SpawnFunction,
   ) {}
 
-  run(check: CheckDefinition, index: number): Promise<CheckStatus> {
+  run(check: Check): Promise<CheckStatus> {
     if (this.signal.aborted) {
-      this.store.markAborted(index);
+      check.markAborted();
       return Promise.resolve("aborted");
     }
 
@@ -22,7 +21,7 @@ export class CheckExecutor {
       const onAbort = () => {
         this.aborted = true;
         this.attemptKill("SIGTERM");
-        this.store.markAborted(index);
+        check.markAborted();
       };
 
       this.signal.addEventListener("abort", onAbort);
@@ -36,19 +35,19 @@ export class CheckExecutor {
       } catch (error) {
         cleanup();
         const message = error instanceof Error ? error.message : "Spawn failed";
-        this.store.appendStdout(index, `${message}\n`);
-        this.store.markFailed(index, null, message);
+        check.appendStdout(`${message}\n`);
+        check.markFailed(null, message);
         resolve("failed");
         return;
       }
 
       this.child.stdout?.on("data", (chunk: Buffer) => {
-        this.store.appendStdout(index, chunk);
+        check.appendStdout(chunk);
       });
 
       this.child.on("error", (error) => {
-        this.store.appendStdout(index, `${error.message}\n`);
-        this.store.markFailed(index, null, error.message);
+        check.appendStdout(`${error.message}\n`);
+        check.markFailed(null, error.message);
         cleanup();
         resolve("failed");
       });
@@ -56,13 +55,13 @@ export class CheckExecutor {
       this.child.on("close", (code, signalCode) => {
         let status: CheckStatus = "running";
         if (this.aborted || this.signal.aborted || signalCode) {
-          this.store.markAborted(index);
+          check.markAborted();
           status = "aborted";
         } else if (code === 0) {
-          this.store.markPassed(index, code);
+          check.markPassed(code);
           status = "passed";
         } else {
-          this.store.markFailed(index, code ?? null, null);
+          check.markFailed(code ?? null, null);
           status = "failed";
         }
         cleanup();
