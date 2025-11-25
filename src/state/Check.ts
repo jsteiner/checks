@@ -31,14 +31,7 @@ export class Check {
   appendStdout(chunk: Buffer | string): boolean {
     const next = chunk.toString();
     if (!next) return false;
-    this.log.push({ stream: "stdout", text: next });
-    return true;
-  }
-
-  appendStderr(chunk: Buffer | string): boolean {
-    const next = chunk.toString();
-    if (!next) return false;
-    this.log.push({ stream: "stderr", text: next });
+    this.log.push({ text: next });
     return true;
   }
 

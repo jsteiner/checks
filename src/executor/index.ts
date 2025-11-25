@@ -1,34 +1,22 @@
-import { type ChildProcess, spawn as defaultSpawn } from "node:child_process";
-import nodeProcess from "node:process";
-import type { Environment } from "../input/environment.js";
 import type { Input } from "../input/index.js";
 import type { ChecksStore } from "../state/ChecksStore.js";
 import type { CheckDefinition, CheckStatus } from "../types.js";
 import { CheckExecutor } from "./CheckExecutor.js";
-
-export type SpawnFunction = (command: string) => ChildProcess;
-
-export interface ExecutorOptions {
-  spawn?: SpawnFunction;
-  process?: Pick<typeof nodeProcess, "kill" | "platform">;
-}
+import { createDefaultSpawner, type SpawnFunction } from "./PtyProcess.js";
 
 export class Executor {
   private readonly abortController = new AbortController();
   private readonly signal = this.abortController.signal;
   private readonly spawnFn: SpawnFunction;
-  private readonly process: Pick<typeof nodeProcess, "kill" | "platform">;
   private readonly stopForwarding: () => void;
 
   constructor(
     private readonly input: Input,
     private readonly store: ChecksStore,
     parentSignal: AbortSignal,
-    options: ExecutorOptions = {},
+    spawnFn: SpawnFunction = createDefaultSpawner(),
   ) {
-    this.spawnFn =
-      options.spawn ?? createDefaultSpawner(this.input.environment);
-    this.process = options.process ?? nodeProcess;
+    this.spawnFn = spawnFn;
     this.stopForwarding = forwardAbortSignal(
       parentSignal,
       this.abortController,
@@ -57,15 +45,13 @@ export class Executor {
     check: CheckDefinition,
     index: number,
   ): Promise<CheckStatus> {
-    const runner = new CheckExecutor(
-      this.store,
-      this.signal,
-      this.spawnFn,
-      this.process,
-    );
+    const runner = new CheckExecutor(this.store, this.signal, this.spawnFn);
     return runner.run(check, index);
   }
 }
+
+export type { SpawnedProcess, SpawnFunction } from "./PtyProcess.js";
+export { createDefaultSpawner } from "./PtyProcess.js";
 
 function forwardAbortSignal(
   source: AbortSignal,
@@ -86,14 +72,4 @@ function forwardAbortSignal(
   return () => {
     source.removeEventListener("abort", onAbort);
   };
-}
-
-function createDefaultSpawner(env: Environment): SpawnFunction {
-  return (command: string) =>
-    defaultSpawn(command, {
-      shell: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      detached: true,
-      env,
-    });
 }

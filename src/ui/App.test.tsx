@@ -51,7 +51,7 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   );
 
   store.appendStdout(0, "alpha");
-  store.appendStderr(1, "bravo");
+  store.appendStdout(1, "bravo");
 
   let frame = await waitForFrameMatch(ink, /<n>:\s+focus/);
 
@@ -60,8 +60,7 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /alpha/);
-  assert.doesNotMatch(frame, /second/);
-  assert.match(frame, /o:\s+stdout/);
+  assert.doesNotMatch(frame, /bravo/);
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /second/);
@@ -70,11 +69,8 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   ink.unmount();
 });
 
-test("filters logs in focus view and shows empty states", async () => {
-  const store = new ChecksStore(
-    [{ name: "stderr-only", command: "echo err" }],
-    Date.now(),
-  );
+test("shows output for failed checks in the list view", async () => {
+  const store = new ChecksStore([{ name: "fail", command: "err" }], Date.now());
   const controller = new AbortController();
   const ink = render(
     <App
@@ -85,28 +81,11 @@ test("filters logs in focus view and shows empty states", async () => {
     />,
   );
 
-  store.appendStderr(0, "problem");
+  store.appendStdout(0, "problem");
+  store.markFailed(0, 1, null);
 
-  ink.stdin.write("1");
-  let frame = await waitForFrameMatch(ink, /problem/);
-
-  ink.stdin.write("o");
-  frame = await waitForFrameMatch(ink, /No stdout/);
-  assert.match(frame, /No stdout/);
-  assert.doesNotMatch(frame, /problem/);
-
-  ink.stdin.write("e");
-  frame = await waitForFrameMatch(ink, /problem/);
-  assert.doesNotMatch(frame, /No stdout/);
-
-  ink.stdin.write("a");
-  frame = await waitForFrameMatch(ink, /problem/);
-
-  ink.stdin.write("z");
-  frame = await waitForFrameMatch(ink, /problem/);
-
-  ink.stdin.write("x");
-  frame = await waitForFrameMatch(ink, /<n>:\s+focus/);
+  const frame = await waitForFrameMatch(ink, /problem/);
+  assert.match(frame, /fail/);
 
   ink.unmount();
 });

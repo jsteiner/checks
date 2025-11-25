@@ -1,51 +1,31 @@
 import assert from "node:assert/strict";
-import type { ChildProcess } from "node:child_process";
-import { EventEmitter } from "node:events";
 import test from "node:test";
 import type { Input } from "../input/index.js";
 import { ChecksStore } from "../state/ChecksStore.js";
-import { Executor, type ExecutorOptions } from "./index.js";
+import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
+import { Executor } from "./index.js";
+import { createDefaultSpawner, type SpawnFunction } from "./PtyProcess.js";
 
-type RunSetupParams = {
-  checks: Input["config"]["checks"];
-  options?: Partial<Input["options"]>;
-  environment?: Input["environment"] & Record<string, string>;
-  controller?: AbortController;
-};
-
-function createRunSetup(params: RunSetupParams) {
-  const checks = params.checks;
+async function executeChecks(
+  checks: Input["config"]["checks"],
+  options: Partial<Input["options"]> = {},
+  spawn: SpawnFunction = createDefaultSpawner(),
+  controller: AbortController = new AbortController(),
+) {
   const store = new ChecksStore(checks, Date.now());
-  const controller = params.controller ?? new AbortController();
   const input: Input = {
     config: { checks },
     options: {
       interactive: false,
       failFast: false,
-      ...params.options,
-    },
-    environment: {
-      FORCE_COLOR: "1",
-      ...params.environment,
+      ...options,
     },
   };
-  return { controller, input, store };
-}
 
-type RunChecksParams = RunSetupParams & {
-  executorOptions?: ExecutorOptions;
-};
-
-async function runChecksWithDefaults(params: RunChecksParams) {
-  const { controller, input, store } = createRunSetup(params);
-  const executor = new Executor(
-    input,
-    store,
-    controller.signal,
-    params.executorOptions,
-  );
+  const executor = new Executor(input, store, controller.signal, spawn);
   await executor.run();
-  return { controller, input, store };
+
+  return { controller, input, store, executor };
 }
 
 test("aborts other running checks after the first failure when fail-fast is enabled", async () => {
@@ -56,34 +36,23 @@ test("aborts other running checks after the first failure when fail-fast is enab
   const started: string[] = [];
   const killed: Record<string, boolean> = {};
 
-  const spawn = (command: string) => {
+  const spawn: SpawnFunction = (command) => {
     started.push(command);
-    const child = new EventEmitter() as EventEmitter & Partial<ChildProcess>;
-    let closed = false;
-
-    const close = (code: number | null, signalCode: NodeJS.Signals | null) => {
-      if (closed) return;
-      closed = true;
-      child.emit("close", code, signalCode);
-    };
+    const child = createFakeSpawnedProcess();
 
     child.kill = () => {
       killed[command] = true;
-      close(null, "SIGTERM");
+      child.emitClose(null, "SIGTERM");
       return true;
     };
 
     if (command === "fail") {
-      process.nextTick(() => close(1, null));
+      process.nextTick(() => child.emitClose(1, null));
     }
-    return child as ChildProcess;
+    return child;
   };
 
-  const { store } = await runChecksWithDefaults({
-    checks,
-    options: { failFast: true },
-    executorOptions: { spawn },
-  });
+  const { store } = await executeChecks(checks, { failFast: true }, spawn);
 
   const [first, second] = store.getSnapshot();
   assert.deepEqual(started.sort(), ["fail", "skip"]);
@@ -93,26 +62,43 @@ test("aborts other running checks after the first failure when fail-fast is enab
   assert.equal(killed["skip"], true);
 });
 
-test("forces color support for spawned commands", async () => {
-  const command = `${process.execPath} -e "console.log(process.env.FORCE_COLOR ?? 'missing')"`;
-  const { store } = await runChecksWithDefaults({
-    checks: [{ name: "env", command }],
-    environment: { FORCE_COLOR: "color" },
-  });
+test("uses provided spawn function when supplied", async () => {
+  const command = `${process.execPath} -e "console.log('should not run')"`;
+  let spawnCalled = false;
+
+  const { store } = await executeChecks(
+    [{ name: "pty-info", command }],
+    {},
+    () => {
+      spawnCalled = true;
+      const child = createFakeSpawnedProcess();
+      process.nextTick(() => child.emitClose(0, null));
+      return child;
+    },
+  );
 
   const first = store.getSnapshot()[0];
   assert.ok(first);
-  assert.deepEqual(first.log, [{ stream: "stdout", text: "color\n" }]);
+  assert.equal(spawnCalled, true);
 });
 
-test("passes environment variables to spawned commands", async () => {
-  const command = `${process.execPath} -e "console.log(process.env.MY_VAR ?? 'missing')"`;
-  const { store } = await runChecksWithDefaults({
-    checks: [{ name: "env", command }],
-    environment: { FORCE_COLOR: "1", MY_VAR: "hello-world" },
-  });
+test("stops immediately when the parent signal is already aborted", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  let spawnCalled = false;
+
+  const { store } = await executeChecks(
+    [{ name: "skipped", command: "noop" }],
+    {},
+    () => {
+      spawnCalled = true;
+      throw new Error("should not spawn");
+    },
+    controller,
+  );
 
   const first = store.getSnapshot()[0];
+  assert.equal(spawnCalled, false);
   assert.ok(first);
-  assert.deepEqual(first.log, [{ stream: "stdout", text: "hello-world\n" }]);
+  assert.equal(first.result.status, "aborted");
 });

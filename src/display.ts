@@ -1,9 +1,4 @@
-import type { CheckState, LogEntry, Stream } from "./types.js";
-
-export function filterLog(log: LogEntry[], stream: Stream | "all"): LogEntry[] {
-  if (stream === "all") return log;
-  return log.filter((entry) => stream === entry.stream);
-}
+import type { CheckState } from "./types.js";
 
 export function formatDuration(ms: number) {
   return `${(ms / 1000).toFixed(2)}s`;

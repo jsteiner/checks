@@ -3,10 +3,7 @@ export interface CheckDefinition {
   command: string;
 }
 
-export type Stream = "stdout" | "stderr";
-
 export interface LogEntry {
-  stream: Stream;
   text: string;
 }
 

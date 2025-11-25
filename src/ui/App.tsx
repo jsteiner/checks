@@ -10,7 +10,7 @@ import type { ChecksStore } from "../state/ChecksStore.js";
 import { CheckListView } from "./CheckListView.js";
 import { FocusedView } from "./FocusedView.js";
 import { LayoutProvider } from "./LayoutContext.js";
-import type { HotkeyConfig, VisibleStreams } from "./types.js";
+import type { HotkeyConfig } from "./types.js";
 
 interface AppProps {
   store: ChecksStore;
@@ -27,7 +27,6 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
     store.getSnapshot,
   );
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const [visibleStreams, setVisibleStreams] = useState<VisibleStreams>("all");
   const focusableCount = Math.min(checks.length, 9);
   const maxFocusableIndex = focusableCount - 1;
   const focusedCheck =
@@ -37,7 +36,6 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
 
   const onFocusChange = useCallback((nextIndex: number | null) => {
     setFocusedIndex(nextIndex);
-    setVisibleStreams("all");
   }, []);
 
   const globalHotkeys = useMemo(
@@ -75,8 +73,6 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
       {focusedCheck ? (
         <FocusedView
           check={focusedCheck}
-          visibleStreams={visibleStreams}
-          onVisibleStreamsChange={setVisibleStreams}
           onFocusChange={onFocusChange}
           globalHotkeys={globalHotkeys}
           interactive={interactive}

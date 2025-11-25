@@ -33,7 +33,7 @@ export function CheckListView({
         <Check
           key={check.index}
           check={check}
-          visibleStreams={check.result.status === "failed" ? "all" : "none"}
+          showOutput={check.result.status === "failed"}
         />
       ))}
       {allDone ? (

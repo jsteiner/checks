@@ -30,13 +30,6 @@ export class ChecksStore {
     }
   }
 
-  appendStderr(index: number, chunk: Buffer | string) {
-    const check = this.getCheckOrThrow(index);
-    if (check.appendStderr(chunk)) {
-      this.emit();
-    }
-  }
-
   markPassed(index: number, exitCode: number | null) {
     const check = this.getCheckOrThrow(index);
     if (check.markPassed(exitCode)) {

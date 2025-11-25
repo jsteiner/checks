@@ -18,7 +18,6 @@ const EXIT_CODES = {
 async function main(
   configPath: string = FILE_CONFIG_PATH,
   argv: string[] = process.argv,
-  env: NodeJS.ProcessEnv = process.env,
 ) {
   const startTime = Date.now();
   const abortController = new AbortController();
@@ -26,7 +25,7 @@ async function main(
 
   let input: Input;
   try {
-    input = await buildInput(configPath, argv, env);
+    input = await buildInput(configPath, argv);
   } catch (error) {
     const message =
       error instanceof FileConfigError

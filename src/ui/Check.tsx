@@ -2,14 +2,13 @@ import { Box } from "ink";
 import type { CheckState } from "../types.js";
 import { CheckOutput } from "./CheckOutput.js";
 import { CheckRow } from "./CheckRow.js";
-import type { VisibleStreams } from "./types.js";
 
 interface CheckProps {
   check: CheckState;
-  visibleStreams: VisibleStreams;
+  showOutput: boolean;
 }
 
-export function Check({ check, visibleStreams }: CheckProps) {
+export function Check({ check, showOutput }: CheckProps) {
   return (
     <Box
       flexDirection="column"
@@ -18,8 +17,8 @@ export function Check({ check, visibleStreams }: CheckProps) {
       paddingX={1}
       gap={1}
     >
-      <CheckOutput check={check} visibleStreams={visibleStreams} />
-      {visibleStreams === "none" ? null : <Divider />}
+      <CheckOutput check={check} showOutput={showOutput} />
+      {!showOutput ? null : <Divider />}
       <CheckRow check={check} />
     </Box>
   );

@@ -1,23 +1,20 @@
 import { Box, Text } from "ink";
-import { filterLog } from "../display.js";
 import type { CheckState } from "../types.js";
-import type { VisibleStreams } from "./types.js";
 
 interface CheckOutputProps {
   check: CheckState;
-  visibleStreams: VisibleStreams;
+  showOutput: boolean;
 }
 
-export function CheckOutput({ check, visibleStreams }: CheckOutputProps) {
-  if (visibleStreams === "none") {
+export function CheckOutput({ check, showOutput }: CheckOutputProps) {
+  if (!showOutput) {
     return null;
   }
 
-  const visibleEntries = filterLog(check.log, visibleStreams);
-  const combined = visibleEntries.map((entry) => entry.text).join("");
+  const combined = check.log.map((entry) => entry.text).join("");
   const rawLines = combined.split("\n").map((line) => line.replace(/\r/g, ""));
   const lines = rawLines.length === 1 && rawLines[0] === "" ? [] : rawLines;
-  const emptyMessage = getEmptyMessage(visibleStreams);
+  const emptyMessage = "No output";
 
   return (
     <Box flexDirection="column">
@@ -30,10 +27,4 @@ export function CheckOutput({ check, visibleStreams }: CheckOutputProps) {
       )}
     </Box>
   );
-}
-
-function getEmptyMessage(streams: VisibleStreams) {
-  if (streams === "stdout") return "No stdout";
-  if (streams === "stderr") return "No stderr";
-  return "No output";
 }

@@ -2,6 +2,7 @@ import type { CheckResult, CheckState } from "../../types.js";
 
 interface CreateCheckOptions {
   status: CheckResult["status"];
+  log?: CheckState["log"];
   startedAt?: number;
   finishedAt?: number;
   exitCode?: number | null;
@@ -20,6 +21,7 @@ export function createCheck({
   name = "demo",
   command = "echo hi",
   index = 0,
+  log = [],
 }: CreateCheckOptions): CheckState {
   const result: CheckResult =
     status === "running"
@@ -44,7 +46,7 @@ export function createCheck({
     name,
     command,
     startedAt,
-    log: [],
+    log,
     result,
   };
 }

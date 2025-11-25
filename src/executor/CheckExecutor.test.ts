@@ -1,57 +1,26 @@
 import assert from "node:assert/strict";
-import type { ChildProcess } from "node:child_process";
-import { EventEmitter } from "node:events";
 import test from "node:test";
 import { ChecksStore } from "../state/ChecksStore.js";
-import type { CheckResult } from "../types.js";
+import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
+import type { CheckDefinition, CheckResult } from "../types.js";
 import { CheckExecutor } from "./CheckExecutor.js";
-import type { SpawnFunction } from "./index.js";
+import type { SpawnFunction } from "./PtyProcess.js";
 
-type KillRecord = { pid: number; signal?: NodeJS.Signals | number };
-type FakeChild = EventEmitter & Partial<ChildProcess>;
-
-function createRunnerContext(params?: {
-  spawn?: SpawnFunction;
-  process?: Pick<NodeJS.Process, "kill" | "platform">;
-  controller?: AbortController;
-}) {
-  const controller = params?.controller ?? new AbortController();
+async function executeCheck(
+  check: CheckDefinition,
+  index: number = 0,
+  spawn: SpawnFunction = () => createFakeSpawnedProcess(),
+  controller: AbortController = new AbortController(),
+) {
   const store = new ChecksStore(
     [{ name: "check", command: "cmd" }],
     Date.now(),
   );
-  const runner = new CheckExecutor(
-    store,
-    controller.signal,
-    params?.spawn ?? (() => new EventEmitter() as ChildProcess),
-    params?.process ?? process,
-  );
-  return { controller, store, runner };
-}
+  const executor = new CheckExecutor(store, controller.signal, spawn);
 
-function createProcessStub() {
-  const kills: KillRecord[] = [];
-  let lastChild: FakeChild | undefined;
+  const status = await executor.run(check, index);
 
-  const processStub: Pick<NodeJS.Process, "kill" | "platform"> = {
-    platform: process.platform,
-    kill: (pid: number, signal?: NodeJS.Signals | number) => {
-      if (!lastChild) {
-        throw new Error("No child process registered for kill");
-      }
-      kills.push(signal === undefined ? { pid } : { pid, signal });
-      lastChild?.emit("close", null, signal ?? null);
-      return true;
-    },
-  };
-
-  return {
-    processStub,
-    kills,
-    setChild(child: FakeChild) {
-      lastChild = child;
-    },
-  };
+  return { controller, store, executor, status };
 }
 
 function expectFailed(result: CheckResult) {
@@ -66,15 +35,15 @@ test("returns aborted immediately when the signal is already aborted", async () 
   controller.abort();
   let spawnCalled = false;
 
-  const { store, runner } = createRunnerContext({
-    controller,
-    spawn: () => {
+  const { store, status } = await executeCheck(
+    { name: "aborted", command: "noop" },
+    0,
+    () => {
       spawnCalled = true;
       throw new Error("should not spawn");
     },
-  });
-
-  const status = await runner.run({ name: "aborted", command: "noop" }, 0);
+    controller,
+  );
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "aborted");
@@ -85,13 +54,16 @@ test("returns aborted immediately when the signal is already aborted", async () 
 
 test("marks passed when the child exits with code 0", async () => {
   const spawn = () => {
-    const child = new EventEmitter() as FakeChild;
-    process.nextTick(() => child.emit("close", 0, null));
-    return child as ChildProcess;
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => child.emitClose(0, null));
+    return child;
   };
 
-  const { store, runner } = createRunnerContext({ spawn });
-  const status = await runner.run({ name: "success", command: "noop" }, 0);
+  const { store, status } = await executeCheck(
+    { name: "success", command: "noop" },
+    0,
+    spawn,
+  );
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "passed");
@@ -102,13 +74,16 @@ test("marks passed when the child exits with code 0", async () => {
 
 test("marks failed when the child exits with a non-zero code", async () => {
   const spawn = () => {
-    const child = new EventEmitter() as FakeChild;
-    process.nextTick(() => child.emit("close", 2, null));
-    return child as ChildProcess;
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => child.emitClose(2, null));
+    return child;
   };
 
-  const { store, runner } = createRunnerContext({ spawn });
-  const status = await runner.run({ name: "fail", command: "noop" }, 0);
+  const { store, status } = await executeCheck(
+    { name: "fail", command: "noop" },
+    0,
+    spawn,
+  );
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "failed");
@@ -118,28 +93,27 @@ test("marks failed when the child exits with a non-zero code", async () => {
 });
 
 test("records spawn errors and fallback error messages", async () => {
-  const { store, runner } = createRunnerContext({
-    spawn: () => {
+  const { store, status } = await executeCheck(
+    { name: "spawn-error", command: "noop" },
+    0,
+    () => {
       throw new Error("spawn failed");
     },
-  });
-  const status = await runner.run({ name: "spawn-error", command: "noop" }, 0);
+  );
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "failed");
   assert.ok(first);
   const result = expectFailed(first.result);
   assert.equal(result.errorMessage, "spawn failed");
-  assert.deepEqual(first.log, [{ stream: "stderr", text: "spawn failed\n" }]);
+  assert.deepEqual(first.log, [{ text: "spawn failed\n" }]);
 
-  const { store: fallbackStore, runner: fallbackRunner } = createRunnerContext({
-    spawn: () => {
-      throw "not-an-error";
-    },
-  });
-  const fallbackStatus = await fallbackRunner.run(
+  const { store: fallbackStore, status: fallbackStatus } = await executeCheck(
     { name: "non-error", command: "noop" },
     0,
+    () => {
+      throw "not-an-error";
+    },
   );
   const fallbackFirst = fallbackStore.getSnapshot()[0];
 
@@ -147,9 +121,7 @@ test("records spawn errors and fallback error messages", async () => {
   assert.ok(fallbackFirst);
   const fallbackResult = expectFailed(fallbackFirst.result);
   assert.equal(fallbackResult.errorMessage, "Spawn failed");
-  assert.deepEqual(fallbackFirst.log, [
-    { stream: "stderr", text: "Spawn failed\n" },
-  ]);
+  assert.deepEqual(fallbackFirst.log, [{ text: "Spawn failed\n" }]);
 });
 
 test("aborts a running check when the abort signal fires", async () => {
@@ -157,19 +129,23 @@ test("aborts a running check when the abort signal fires", async () => {
   let killed = false;
 
   const spawn = () => {
-    const child = new EventEmitter() as FakeChild;
+    const child = createFakeSpawnedProcess();
     child.kill = () => {
       killed = true;
-      child.emit("close", null, "SIGTERM");
+      child.emitClose(null, "SIGTERM");
       return true;
     };
-    return child as ChildProcess;
+    return child;
   };
 
-  const { store, runner } = createRunnerContext({ spawn, controller });
-  const promise = runner.run({ name: "abort", command: "noop" }, 0);
+  const promise = executeCheck(
+    { name: "abort", command: "noop" },
+    0,
+    spawn,
+    controller,
+  );
   controller.abort();
-  const status = await promise;
+  const { store, status } = await promise;
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "aborted");
@@ -180,13 +156,16 @@ test("aborts a running check when the abort signal fires", async () => {
 
 test("marks aborted when the child closes with a signal", async () => {
   const spawn = () => {
-    const child = new EventEmitter() as FakeChild;
-    process.nextTick(() => child.emit("close", null, "SIGTERM"));
-    return child as ChildProcess;
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => child.emitClose(null, "SIGTERM"));
+    return child;
   };
 
-  const { store, runner } = createRunnerContext({ spawn });
-  const status = await runner.run({ name: "signal-close", command: "noop" }, 0);
+  const { store, status } = await executeCheck(
+    { name: "signal-close", command: "noop" },
+    0,
+    spawn,
+  );
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "aborted");
@@ -194,68 +173,32 @@ test("marks aborted when the child closes with a signal", async () => {
   assert.equal(first.result.status, "aborted");
 });
 
-test("kills the process group when a pid is present", async () => {
+test("skips killing when the child is already marked killed", async () => {
   const controller = new AbortController();
-  const { processStub, kills, setChild } = createProcessStub();
+  let killCalled = false;
 
   const spawn = () => {
-    const child = new EventEmitter() as FakeChild;
-    setChild(child);
-    Object.defineProperty(child, "pid", { value: 1234 });
+    const child = createFakeSpawnedProcess({ killed: true });
     child.kill = () => {
-      kills.push({ pid: 1234, signal: "SIGTERM" });
-      child.emit("close", null, "SIGTERM");
+      killCalled = true;
+      child.emitClose(null, "SIGTERM");
       return true;
     };
-    return child as ChildProcess;
+    process.nextTick(() => child.emitClose(null, "SIGTERM"));
+    return child;
   };
 
-  const { store, runner } = createRunnerContext({
+  const promise = executeCheck(
+    { name: "already-killed", command: "noop" },
+    0,
     spawn,
-    process: processStub,
     controller,
-  });
-
-  const promise = runner.run({ name: "group-kill", command: "noop" }, 0);
-  controller.abort();
-  const status = await promise;
-  const first = store.getSnapshot()[0];
-
-  assert.equal(status, "aborted");
-  assert.ok(first);
-  assert.deepEqual(
-    kills.map((entry) => ({ ...entry, pid: Math.trunc(entry.pid) })),
-    [{ pid: -1234, signal: "SIGTERM" }],
   );
-});
-
-test("falls back to child.kill when process group killing is skipped", async () => {
-  const controller = new AbortController();
-  let killed = false;
-
-  const spawn = () => {
-    const child = new EventEmitter() as FakeChild;
-    Object.defineProperty(child, "pid", { value: 4321 });
-    child.kill = () => {
-      killed = true;
-      child.emit("close", null, "SIGTERM");
-      return true;
-    };
-    return child as ChildProcess;
-  };
-
-  const { store, runner } = createRunnerContext({
-    spawn,
-    process: { platform: "win32", kill: () => true },
-    controller,
-  });
-
-  const promise = runner.run({ name: "win32", command: "noop" }, 0);
   controller.abort();
-  const status = await promise;
+  const { store, status } = await promise;
   const first = store.getSnapshot()[0];
 
   assert.equal(status, "aborted");
   assert.ok(first);
-  assert.equal(killed, true);
+  assert.equal(killCalled, false);
 });

@@ -4,11 +4,10 @@ import { Check } from "./Check.js";
 
 const definition = { name: "sample", command: "echo hi" };
 
-test("ignores empty stdout and stderr chunks", () => {
+test("ignores empty stdout chunks", () => {
   const check = new Check(0, definition, Date.now());
 
   assert.equal(check.appendStdout(""), false);
-  assert.equal(check.appendStderr(Buffer.alloc(0)), false);
 
   assert.deepEqual(check.toState().log, []);
 });

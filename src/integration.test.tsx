@@ -3,7 +3,6 @@ import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
 import { Executor } from "./executor/index.js";
-import { buildEnvironment } from "./input/environment.js";
 import type { Input } from "./input/index.js";
 import { ChecksStore } from "./state/ChecksStore.js";
 import { App } from "./ui/App.js";
@@ -25,7 +24,6 @@ test("runs commands in parallel and renders updates", async () => {
   const input: Input = {
     config: { checks: definitions },
     options: { interactive: false, failFast: false },
-    environment: buildEnvironment(process.env),
   };
   const ink = render(
     <App

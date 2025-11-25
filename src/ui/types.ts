@@ -1,7 +1,3 @@
-import type { Stream } from "../types.js";
-
-export type VisibleStreams = "all" | Stream | "none";
-
 export interface HotkeyConfig {
   keys: string;
   description: string;
