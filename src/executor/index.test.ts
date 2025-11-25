@@ -1,23 +1,29 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Input } from "../input/index.js";
-import { ChecksStore } from "../state/ChecksStore.js";
+import { Suite } from "../state/Suite.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import { Executor } from "./index.js";
 import { createDefaultSpawner, type SpawnFunction } from "./PtyProcess.js";
 
 async function executeChecks(
-  checks: Input["config"]["checks"],
+  checks: Input["projects"][number]["checks"],
   options: Partial<Input["options"]> = {},
   spawn: SpawnFunction = createDefaultSpawner(),
   controller: AbortController = new AbortController(),
 ) {
-  const store = new ChecksStore(checks, Date.now());
+  const project = {
+    project: "config",
+    path: "/tmp/checks.config.json",
+    checks,
+  };
+  const store = new Suite({ projects: [project] }, Date.now());
   const input: Input = {
-    config: { checks },
+    projects: [project],
     options: {
       interactive: false,
       failFast: false,
+      recursive: false,
       ...options,
     },
   };
@@ -29,7 +35,7 @@ async function executeChecks(
 }
 
 test("aborts other running checks after the first failure when fail-fast is enabled", async () => {
-  const checks: Input["config"]["checks"] = [
+  const checks: Input["projects"][number]["checks"] = [
     { name: "fail", command: "fail" },
     { name: "skip", command: "skip" },
   ];
@@ -53,10 +59,9 @@ test("aborts other running checks after the first failure when fail-fast is enab
   };
 
   const { store } = await executeChecks(checks, { failFast: true }, spawn);
-
-  const [first, second] = store.getSnapshot();
+  const first = store.getCheck(0, 0);
+  const second = store.getCheck(0, 1);
   assert.deepEqual(started.sort(), ["fail", "skip"]);
-  assert.ok(first && second);
   assert.equal(first.result.status, "failed");
   assert.equal(second.result.status, "aborted");
   assert.equal(killed["skip"], true);
@@ -77,9 +82,9 @@ test("uses provided spawn function when supplied", async () => {
     },
   );
 
-  const first = store.getSnapshot()[0];
-  assert.ok(first);
+  const first = store.getCheck(0, 0);
   assert.equal(spawnCalled, true);
+  assert.equal(first.result.status, "passed");
 });
 
 test("stops immediately when the parent signal is already aborted", async () => {
@@ -97,8 +102,7 @@ test("stops immediately when the parent signal is already aborted", async () => 
     controller,
   );
 
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0, 0);
   assert.equal(spawnCalled, false);
-  assert.ok(first);
   assert.equal(first.result.status, "aborted");
 });

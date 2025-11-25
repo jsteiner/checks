@@ -8,11 +8,20 @@ test("parses flags when provided", () => {
     "checks",
     "--interactive",
     "--fail-fast",
+    "--recursive",
   ]);
-  assert.deepEqual(result, { interactive: true, failFast: true });
+  assert.deepEqual(result, {
+    interactive: true,
+    failFast: true,
+    recursive: true,
+  });
 });
 
 test("defaults options to false", () => {
   const result = parseCLIOptions(["node", "checks"]);
-  assert.deepEqual(result, { interactive: false, failFast: false });
+  assert.deepEqual(result, {
+    interactive: false,
+    failFast: false,
+    recursive: false,
+  });
 });

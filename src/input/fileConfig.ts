@@ -13,6 +13,7 @@ const checkSchema = z.object({
 });
 
 const fileConfigSchema = z.object({
+  project: z.string().trim().min(1, "project is required"),
   checks: z.array(checkSchema, { message: "checks must be an array" }),
 });
 
@@ -48,9 +49,26 @@ export async function loadFileConfig(configPath: string): Promise<FileConfig> {
     return fileConfigSchema.parse(parsed);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const details = error.issues.map((issue) => issue.message).join("; ");
+      const details = error.issues
+        .map((issue) => formatIssue(issue))
+        .join("; ");
       throw new FileConfigError(`Invalid config structure: ${details}`);
     }
     throw error;
   }
+}
+
+function formatIssue(issue: z.ZodIssue) {
+  if (issue.path.length > 0) {
+    if (
+      issue.code === "invalid_type" &&
+      issue.message.toLowerCase().includes("received undefined")
+    ) {
+      return `${issue.path.join(".")} is required`;
+    }
+    if (issue.message === "Required") {
+      return `${issue.path.join(".")} is required`;
+    }
+  }
+  return issue.message;
 }

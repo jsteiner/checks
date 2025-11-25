@@ -29,7 +29,7 @@ test("wraps unknown read errors", async () => {
       async () => loadFileConfig(filePath),
       (error) => {
         assert.ok(error instanceof FileConfigError);
-        assert.match(error.message, /Failed to read config/);
+        assert.equal(error.message, `Failed to read config at ${filePath}`);
         return true;
       },
     );
@@ -45,7 +45,7 @@ test("throws when config file contains invalid JSON", async () => {
     async () => loadFileConfig(filePath),
     (error) => {
       assert.ok(error instanceof FileConfigError);
-      assert.match(error.message, /Invalid JSON/);
+      assert.equal(error.message, `Invalid JSON in config at ${filePath}`);
       return true;
     },
   );
@@ -58,7 +58,26 @@ test("throws when config structure is invalid", async () => {
     async () => loadFileConfig(filePath),
     (error) => {
       assert.ok(error instanceof FileConfigError);
-      assert.match(error.message, /Invalid config structure/);
+      assert.equal(
+        error.message,
+        "Invalid config structure: project is required; checks must be an array",
+      );
+      return true;
+    },
+  );
+});
+
+test("requires a project field", async () => {
+  const filePath = await createConfigFile({ checks: [] });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.equal(
+        error.message,
+        "Invalid config structure: project is required",
+      );
       return true;
     },
   );
@@ -66,6 +85,7 @@ test("throws when config structure is invalid", async () => {
 
 test("parses a valid config", async () => {
   const filePath = await createConfigFile({
+    project: "demo",
     checks: [
       { name: "lint", command: "pnpm lint" },
       { name: "test", command: "pnpm test" },
@@ -73,6 +93,7 @@ test("parses a valid config", async () => {
   });
 
   const config = await loadFileConfig(filePath);
+  assert.equal(config.project, "demo");
   assert.equal(config.checks.length, 2);
   assert.deepEqual(config.checks[0], { name: "lint", command: "pnpm lint" });
 });

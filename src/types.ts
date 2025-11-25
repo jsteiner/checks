@@ -3,15 +3,36 @@ export interface CheckDefinition {
   command: string;
 }
 
+export interface ProjectDefinition {
+  project: string;
+  path: string;
+  checks: CheckDefinition[];
+}
+
 export interface LogEntry {
   text: string;
 }
 
 export interface CheckState extends CheckDefinition {
-  index: number;
   startedAt: number;
   log: LogEntry[];
   result: CheckResult;
+}
+
+export interface ProjectState extends ProjectDefinition {
+  checks: CheckState[];
+  summary: Summary;
+  isComplete: boolean;
+}
+
+export type SuiteDefinition = {
+  projects: ProjectDefinition[];
+};
+
+export interface SuiteState extends SuiteDefinition {
+  projects: ProjectState[];
+  summary: Summary;
+  isComplete: boolean;
 }
 
 export type CheckResult =

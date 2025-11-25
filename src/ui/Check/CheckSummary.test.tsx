@@ -2,13 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
 import type { ReactElement } from "react";
-import { stripAnsi } from "../test/helpers/ui.js";
-import type { CheckState } from "../types.js";
-import { CheckRow } from "./CheckRow.js";
-import { LayoutProvider } from "./LayoutContext.js";
+import { stripAnsi } from "../../test/helpers/ui.js";
+import type { CheckState } from "../../types.js";
+import { LayoutProvider } from "../LayoutContext.js";
+import { CheckSummary } from "./CheckSummary.js";
 
 const BASE_CHECK: Omit<CheckState, "result"> = {
-  index: 0,
   name: "demo",
   command: "echo hi",
   startedAt: 1_000,
@@ -20,7 +19,10 @@ test("shows duration to the right of the command after completion", () => {
     ...BASE_CHECK,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   };
-  const { lastFrame } = renderWithLayout(<CheckRow check={check} />, [check]);
+  const { lastFrame } = renderWithLayout(
+    <CheckSummary check={check} index={0} />,
+    [check],
+  );
 
   const frame = stripAnsi(lastFrame() ?? "");
   assert.match(frame, /echo hi +0\.50s$/);
@@ -28,7 +30,10 @@ test("shows duration to the right of the command after completion", () => {
 
 test("omits duration while running", () => {
   const check: CheckState = { ...BASE_CHECK, result: { status: "running" } };
-  const { lastFrame } = renderWithLayout(<CheckRow check={check} />, [check]);
+  const { lastFrame } = renderWithLayout(
+    <CheckSummary check={check} index={0} />,
+    [check],
+  );
 
   const frame = stripAnsi(lastFrame() ?? "");
   assert.match(frame, /echo hi/);
@@ -42,13 +47,12 @@ test("pads the command so durations align", () => {
   };
   const widestCheck: CheckState = {
     ...check,
-    index: 1,
     command: `${BASE_CHECK.command}!`,
   };
   const { lastFrame } = renderWithLayout(
     <>
-      <CheckRow check={check} />
-      <CheckRow check={widestCheck} />
+      <CheckSummary check={check} index={0} />
+      <CheckSummary check={widestCheck} index={1} />
     </>,
     [check, widestCheck],
   );

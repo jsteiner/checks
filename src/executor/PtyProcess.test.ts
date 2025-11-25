@@ -220,6 +220,21 @@ test("falls back to PTY kill when group kill fails", async () => {
   assert.deepEqual(fakePty.killCalls, ["SIGKILL"]);
 });
 
+test("throws when spawning twice", () => {
+  const child = new PtyProcess({ spawn: () => createFakePty() }).spawn("noop");
+
+  assert.throws(() => {
+    child.spawn("noop");
+  }, /already spawned/i);
+});
+
+test("throws when killing before spawn", () => {
+  const child = new PtyProcess();
+  assert.throws(() => {
+    child.kill();
+  }, /not been spawned/i);
+});
+
 test("syncs PTY size with stdout when resize events occur", () => {
   const stdout = Object.assign(new EventEmitter(), {
     isTTY: true,

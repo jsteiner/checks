@@ -54,7 +54,7 @@ test("quit hotkey does not abort when all checks are done", async () => {
   const ink = render(
     <Legend
       interactive
-      allDone
+      isComplete
       focusedIndex={null}
       maxFocusableIndex={0}
       onFocusChange={() => {}}
@@ -105,7 +105,7 @@ function LegendWithLabel({
       <Text>{label}</Text>
       <Legend
         interactive
-        allDone={false}
+        isComplete={false}
         focusedIndex={focusedIndex}
         maxFocusableIndex={maxFocusableIndex}
         onFocusChange={() => {}}

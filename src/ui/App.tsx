@@ -1,13 +1,13 @@
 import { Box, useApp } from "ink";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import type { ChecksStore } from "../state/ChecksStore.js";
-import { FocusedView } from "./FocusedView.js";
+import type { Suite as SuiteStore } from "../state/Suite.js";
+import { Check } from "./Check/index.js";
 import { LayoutProvider } from "./LayoutContext.js";
 import { Legend } from "./Legend.js";
-import { ListView } from "./ListView.js";
+import { Suite } from "./Suite.js";
 
 interface AppProps {
-  store: ChecksStore;
+  store: SuiteStore;
   interactive: boolean;
   abortSignal: AbortSignal;
   onAbort: () => void;
@@ -15,28 +15,30 @@ interface AppProps {
 
 export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   const { exit } = useApp();
-  const checks = useSyncExternalStore(
+  const suite = useSyncExternalStore(
     store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot,
+    store.toState,
+    store.toState,
   );
+  const { projects, isComplete } = suite;
+  const checks = projects.flatMap((project) => project.checks);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const focusableCount = Math.min(checks.length, 9);
   const maxFocusableIndex = focusableCount - 1;
   const focusedCheck =
-    focusedIndex === null ? null : (checks[focusedIndex] ?? null);
-  const allDone = checks.every((check) => check.result.status !== "running");
-  const summary = store.summary();
+    focusedIndex === null || checks[focusedIndex] === undefined
+      ? null
+      : { check: checks[focusedIndex], index: focusedIndex };
 
   const onFocusChange = useCallback((nextIndex: number | null) => {
     setFocusedIndex(nextIndex);
   }, []);
 
   useEffect(() => {
-    if (!interactive && allDone) {
+    if (!interactive && isComplete) {
       exit();
     }
-  }, [allDone, exit, interactive]);
+  }, [isComplete, exit, interactive]);
 
   useEffect(() => {
     if (abortSignal.aborted) {
@@ -52,9 +54,13 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   return (
     <LayoutProvider checks={checks}>
       {focusedCheck ? (
-        <FocusedView check={focusedCheck} />
+        <Check
+          check={focusedCheck.check}
+          index={focusedCheck.index}
+          showOutput
+        />
       ) : (
-        <ListView checks={checks} allDone={allDone} summary={summary} />
+        <Suite projects={projects} />
       )}
       {interactive ? (
         <Box
@@ -63,7 +69,7 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
         >
           <Legend
             interactive={interactive}
-            allDone={allDone}
+            isComplete={isComplete}
             focusedIndex={focusedIndex}
             maxFocusableIndex={maxFocusableIndex}
             onFocusChange={onFocusChange}

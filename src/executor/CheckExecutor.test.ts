@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ChecksStore } from "../state/ChecksStore.js";
+import { Project } from "../state/Project.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import type { CheckDefinition, CheckResult } from "../types.js";
 import { CheckExecutor } from "./CheckExecutor.js";
@@ -11,7 +11,11 @@ async function executeCheck(
   spawn: SpawnFunction = () => createFakeSpawnedProcess(),
   controller: AbortController = new AbortController(),
 ) {
-  const store = new ChecksStore([check], Date.now());
+  const store = new Project(
+    { project: "config", path: "/tmp/checks.config.json", checks: [check] },
+    0,
+    Date.now(),
+  );
   const executor = new CheckExecutor(controller.signal, spawn);
   const target = store.getCheck(0);
 
@@ -40,11 +44,10 @@ test("returns aborted immediately when the signal is already aborted", async () 
     },
     controller,
   );
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0);
 
   assert.equal(status, "aborted");
   assert.equal(spawnCalled, false);
-  assert.ok(first);
   assert.equal(first.result.status, "aborted");
 });
 
@@ -59,10 +62,9 @@ test("marks passed when the child exits with code 0", async () => {
     { name: "success", command: "noop" },
     spawn,
   );
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0);
 
   assert.equal(status, "passed");
-  assert.ok(first);
   assert.equal(first.result.status, "passed");
   assert.equal(first.result.exitCode, 0);
 });
@@ -78,10 +80,9 @@ test("marks failed when the child exits with a non-zero code", async () => {
     { name: "fail", command: "noop" },
     spawn,
   );
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0);
 
   assert.equal(status, "failed");
-  assert.ok(first);
   assert.equal(first.result.status, "failed");
   assert.equal(first.result.exitCode, 2);
 });
@@ -93,10 +94,9 @@ test("records spawn errors and fallback error messages", async () => {
       throw new Error("spawn failed");
     },
   );
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0);
 
   assert.equal(status, "failed");
-  assert.ok(first);
   const result = expectFailed(first.result);
   assert.equal(result.errorMessage, "spawn failed");
   assert.deepEqual(first.log, [{ text: "spawn failed\n" }]);
@@ -107,10 +107,9 @@ test("records spawn errors and fallback error messages", async () => {
       throw "not-an-error";
     },
   );
-  const fallbackFirst = fallbackStore.getSnapshot()[0];
+  const fallbackFirst = fallbackStore.getCheck(0);
 
   assert.equal(fallbackStatus, "failed");
-  assert.ok(fallbackFirst);
   const fallbackResult = expectFailed(fallbackFirst.result);
   assert.equal(fallbackResult.errorMessage, "Spawn failed");
   assert.deepEqual(fallbackFirst.log, [{ text: "Spawn failed\n" }]);
@@ -137,10 +136,9 @@ test("aborts a running check when the abort signal fires", async () => {
   );
   controller.abort();
   const { store, status } = await promise;
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0);
 
   assert.equal(status, "aborted");
-  assert.ok(first);
   assert.equal(first.result.status, "aborted");
   assert.equal(killed, true);
 });
@@ -156,10 +154,9 @@ test("marks aborted when the child closes with a signal", async () => {
     { name: "signal-close", command: "noop" },
     spawn,
   );
-  const first = store.getSnapshot()[0];
+  const first = store.getCheck(0);
 
   assert.equal(status, "aborted");
-  assert.ok(first);
   assert.equal(first.result.status, "aborted");
 });
 
@@ -184,10 +181,8 @@ test("skips killing when the child is already marked killed", async () => {
     controller,
   );
   controller.abort();
-  const { store, status } = await promise;
-  const first = store.getSnapshot()[0];
+  const { status } = await promise;
 
   assert.equal(status, "aborted");
-  assert.ok(first);
   assert.equal(killCalled, false);
 });

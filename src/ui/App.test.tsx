@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import { ChecksStore } from "../state/ChecksStore.js";
+import { Suite } from "../state/Suite.js";
 import {
   stripAnsi,
   tick,
@@ -14,9 +14,38 @@ const SAMPLE_CHECKS = [
   { name: "first", command: "echo first" },
   { name: "second", command: "echo second" },
 ];
+const SAMPLE_PROJECT = {
+  project: "sample",
+  path: "/tmp/checks.config.json",
+  checks: SAMPLE_CHECKS,
+};
+
+test("shows project header with a compact summary", async () => {
+  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const controller = new AbortController();
+  const ink = render(
+    <App
+      store={store}
+      interactive={false}
+      abortSignal={controller.signal}
+      onAbort={() => controller.abort()}
+    />,
+  );
+
+  store.getCheck(0, 0).markPassed(0);
+  store.getCheck(0, 1).markPassed(0);
+
+  const frame = stripAnsi(
+    await waitForFrameMatch(ink, /2 passed.*0 failed.*0 aborted/),
+  );
+  assert.match(frame, /sample/);
+  assert.match(frame, /first/);
+
+  ink.unmount();
+});
 
 test("shows interactive legend and focuses/unfocuses checks", async () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
   const controller = new AbortController();
   const ink = render(
     <App
@@ -27,8 +56,8 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
     />,
   );
 
-  store.getCheck(0).appendStdout("alpha");
-  store.getCheck(1).appendStdout("bravo");
+  store.getCheck(0, 0).appendStdout("alpha");
+  store.getCheck(0, 1).appendStdout("bravo");
 
   let frame = await waitForFrameMatch(ink, /<n>:\s+focus/);
 
@@ -52,7 +81,17 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
 });
 
 test("shows output for failed checks in the list view", async () => {
-  const store = new ChecksStore([{ name: "fail", command: "err" }], Date.now());
+  const store = new Suite(
+    {
+      projects: [
+        {
+          ...SAMPLE_PROJECT,
+          checks: [{ name: "fail", command: "err" }],
+        },
+      ],
+    },
+    Date.now(),
+  );
   const controller = new AbortController();
   const ink = render(
     <App
@@ -63,7 +102,7 @@ test("shows output for failed checks in the list view", async () => {
     />,
   );
 
-  const check = store.getCheck(0);
+  const check = store.getCheck(0, 0);
   check.appendStdout("problem");
   check.markFailed(1, null);
 
@@ -74,7 +113,7 @@ test("shows output for failed checks in the list view", async () => {
 });
 
 test("aborts when quitting while checks are running", async () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
   const controller = new AbortController();
   let aborted = false;
 
@@ -100,7 +139,7 @@ test("aborts when quitting while checks are running", async () => {
 });
 
 test("ignores number keys outside the focusable range", async () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
   const controller = new AbortController();
   const ink = render(
     <App
@@ -128,7 +167,7 @@ test("exits when the abort signal is already fired", async () => {
     removeEventListener: () => events.push("remove"),
   } as unknown as AbortSignal;
 
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
   const ink = render(
     <App
       store={store}
@@ -144,9 +183,9 @@ test("exits when the abort signal is already fired", async () => {
 });
 
 test("does not abort when quitting after completion", async () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
-  store.getCheck(0).markPassed(0);
-  store.getCheck(1).markPassed(0);
+  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  store.getCheck(0, 0).markPassed(0);
+  store.getCheck(0, 1).markPassed(0);
 
   let abortCalled = false;
   const controller = new AbortController();

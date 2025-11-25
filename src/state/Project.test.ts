@@ -1,56 +1,67 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ChecksStore } from "./ChecksStore.js";
+import { setTimeout as delay } from "node:timers/promises";
+import type { CheckResult } from "../types.js";
+import { Project } from "./Project.js";
 
 const SAMPLE_CHECKS = [
   { name: "lint", command: "pnpm lint" },
   { name: "test", command: "pnpm test" },
 ];
 
+const SAMPLE_PROJECT = {
+  project: "demo",
+  path: "/tmp/checks.config.json",
+  checks: SAMPLE_CHECKS,
+};
+
+function expectPassed(result: CheckResult) {
+  if (result.status !== "passed") {
+    throw new Error(`Expected passed, got ${result.status}`);
+  }
+  return result;
+}
+
+function expectFailed(result: CheckResult) {
+  if (result.status !== "failed") {
+    throw new Error(`Expected failed, got ${result.status}`);
+  }
+  return result;
+}
+
 test("tracks status transitions", () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, 0);
+  const store = new Project(SAMPLE_PROJECT, 0, 0);
   const first = store.getCheck(0);
   const second = store.getCheck(1);
-  const snapshot = store.getSnapshot();
-  const firstState = snapshot[0];
-  assert.ok(first);
-  assert.ok(firstState);
-  assert.equal(firstState.result.status, "running");
+  assert.equal(first.result.status, "running");
 
   assert.equal(first.markPassed(0), true);
-  const afterSuccess = store.getSnapshot();
-  const success = afterSuccess[0];
-  assert.ok(success);
-  assert.equal(success.result.status, "passed");
-  assert.equal(success.result.exitCode, 0);
+  const success = expectPassed(first.result);
+  assert.equal(success.exitCode, 0);
 
   assert.equal(second.markFailed(1, "boom"), true);
-  const afterFailure = store.getSnapshot();
-  const failure = afterFailure[1];
-  assert.ok(failure);
-  assert.equal(failure.result.status, "failed");
-  assert.equal(failure.result.exitCode, 1);
-  assert.equal(failure.result.errorMessage, "boom");
+  const failure = expectFailed(second.result);
+  assert.equal(failure.exitCode, 1);
+  assert.equal(failure.errorMessage, "boom");
 
   // Terminal statuses do not get overridden
   assert.equal(second.markAborted(), false);
-  const afterAbortAttempt = store.getSnapshot();
-  const stillFailure = afterAbortAttempt[1];
-  assert.ok(stillFailure);
-  assert.equal(stillFailure.result.status, "failed");
+  const stillFailure = expectFailed(second.result);
+  assert.equal(stillFailure.status, "failed");
 });
 
 test("summarizes run results", () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now() - 500);
+  const store = new Project(SAMPLE_PROJECT, 0, Date.now() - 500);
   store.getCheck(0).markPassed(0);
   store.getCheck(1).markFailed(1, null);
 
-  const summary = store.summary();
+  const summary = store.toState().summary;
   assert.equal(summary.total, 2);
   assert.equal(summary.passed, 1);
   assert.equal(summary.failed, 1);
   assert.equal(summary.aborted, 0);
   assert.ok(summary.durationMs >= 0);
+  assert.equal(store.toState().isComplete, true);
 });
 
 test("summary duration reflects last finished check time", () => {
@@ -59,7 +70,7 @@ test("summary duration reflects last finished check time", () => {
   Date.now = () => fakeNow;
 
   try {
-    const store = new ChecksStore(SAMPLE_CHECKS, fakeNow);
+    const store = new Project(SAMPLE_PROJECT, 0, fakeNow);
     fakeNow = 125;
     store.getCheck(0).markPassed(0);
 
@@ -67,38 +78,45 @@ test("summary duration reflects last finished check time", () => {
     store.getCheck(1).markFailed(1, null);
 
     fakeNow = 1000;
-    const summary = store.summary();
+    const summary = store.toState().summary;
     assert.equal(summary.durationMs, 250);
+    assert.equal(store.toState().isComplete, true);
   } finally {
     Date.now = originalNow;
   }
 });
 
 test("waitForCompletion resolves when all checks finish", async () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
   const waitPromise = store.waitForCompletion();
+  let resolved = false;
+  void waitPromise.then(() => {
+    resolved = true;
+  });
 
+  await delay(0);
+  assert.equal(resolved, false);
   store.getCheck(0).markPassed(0);
   store.getCheck(1).markFailed(1, null);
 
-  const snapshot = await waitPromise;
-  const [first, second] = snapshot;
-  assert.ok(first && second);
-  assert.equal(first.result.status, "passed");
-  assert.equal(second.result.status, "failed");
+  await waitPromise;
+  assert.equal(resolved, true);
+  assert.equal(store.getCheck(0).status, "passed");
+  assert.equal(store.getCheck(1).status, "failed");
 });
 
 test("waitForCompletion resolves immediately when already complete", async () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
   store.getCheck(0).markPassed(0);
   store.getCheck(1).markFailed(1, null);
 
-  const snapshot = await store.waitForCompletion();
-  assert.equal(snapshot.length, SAMPLE_CHECKS.length);
+  await store.waitForCompletion();
+  assert.equal(store.getCheck(0).status, "passed");
+  assert.equal(store.getCheck(1).status, "failed");
 });
 
 test("does not emit when attempting to update a terminal check", () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
   let updates = 0;
   const unsubscribe = store.subscribe(() => {
     updates += 1;
@@ -115,7 +133,7 @@ test("does not emit when attempting to update a terminal check", () => {
 });
 
 test("throws when requesting an unknown check index", () => {
-  const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
   assert.throws(() => {
     store.getCheck(99);
   });

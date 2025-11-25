@@ -4,7 +4,7 @@ import type { HotkeyConfig } from "./types.js";
 
 interface LegendProps {
   interactive: boolean;
-  allDone: boolean;
+  isComplete: boolean;
   focusedIndex: number | null;
   maxFocusableIndex: number;
   onFocusChange: (index: number | null) => void;
@@ -14,7 +14,7 @@ interface LegendProps {
 
 export function Legend({
   interactive,
-  allDone,
+  isComplete,
   focusedIndex,
   maxFocusableIndex,
   onFocusChange,
@@ -24,14 +24,21 @@ export function Legend({
   const hotkeys = useMemo(
     () =>
       createHotkeys({
-        allDone,
+        isComplete,
         focusedIndex,
         maxFocusableIndex,
         onFocusChange,
         onAbort,
         onQuit,
       }),
-    [allDone, focusedIndex, maxFocusableIndex, onAbort, onFocusChange, onQuit],
+    [
+      isComplete,
+      focusedIndex,
+      maxFocusableIndex,
+      onAbort,
+      onFocusChange,
+      onQuit,
+    ],
   );
 
   useInput(
@@ -64,7 +71,7 @@ function LegendItem({ keys, description, color }: HotkeyConfig) {
 }
 
 function createHotkeys({
-  allDone,
+  isComplete,
   focusedIndex,
   maxFocusableIndex,
   onFocusChange,
@@ -73,7 +80,7 @@ function createHotkeys({
 }: Omit<LegendProps, "interactive">): HotkeyConfig[] {
   const hotkeys: HotkeyConfig[] = [
     createFocusHotkey({ focusedIndex, maxFocusableIndex, onFocusChange }),
-    createQuitHotkey({ allDone, onAbort, onQuit }),
+    createQuitHotkey({ isComplete, onAbort, onQuit }),
   ];
 
   if (focusedIndex !== null) {
@@ -125,11 +132,11 @@ function createUnfocusHotkey({
 }
 
 function createQuitHotkey({
-  allDone,
+  isComplete,
   onAbort,
   onQuit,
 }: {
-  allDone: boolean;
+  isComplete: boolean;
   onAbort: () => void;
   onQuit: () => void;
 }): HotkeyConfig {
@@ -137,7 +144,7 @@ function createQuitHotkey({
     keys: "q",
     description: "quit",
     handler: () => {
-      if (!allDone) {
+      if (!isComplete) {
         onAbort();
       }
       onQuit();

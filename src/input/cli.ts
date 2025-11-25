@@ -3,6 +3,7 @@ import { Command } from "commander";
 export interface CLIOptions {
   interactive: boolean;
   failFast: boolean;
+  recursive: boolean;
 }
 
 export function parseCLIOptions(argv: string[]): CLIOptions {
@@ -15,6 +16,11 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     .option(
       "-f, --fail-fast",
       "abort remaining checks after the first failure",
+      false,
+    )
+    .option(
+      "-r, --recursive",
+      "recursively search for and run checks in child directories",
       false,
     );
 

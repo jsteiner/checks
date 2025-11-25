@@ -5,7 +5,7 @@ import { render } from "ink";
 import { Executor } from "./executor/index.js";
 import { FILE_CONFIG_PATH, FileConfigError } from "./input/fileConfig.js";
 import { buildInput, type Input } from "./input/index.js";
-import { ChecksStore } from "./state/ChecksStore.js";
+import { Suite } from "./state/Suite.js";
 import { App } from "./ui/App.js";
 
 const EXIT_CODES = {
@@ -35,7 +35,7 @@ async function main(
     process.exit(EXIT_CODES.orchestratorError);
   }
 
-  const store = new ChecksStore(input.config.checks, startTime);
+  const store = new Suite({ projects: input.projects }, startTime);
   const executor = new Executor(input, store, abortController.signal);
   const ink = render(
     <App
@@ -61,7 +61,7 @@ async function main(
     exitWithNewline(EXIT_CODES.orchestratorError);
   }
 
-  const summary = store.summary();
+  const { summary } = store.toState();
   if (abortController.signal.aborted || summary.aborted > 0) {
     exitWithNewline(EXIT_CODES.aborted);
   }

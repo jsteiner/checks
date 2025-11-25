@@ -4,7 +4,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
 import { Executor } from "./executor/index.js";
 import type { Input } from "./input/index.js";
-import { ChecksStore } from "./state/ChecksStore.js";
+import { Suite } from "./state/Suite.js";
+import { stripAnsi } from "./test/helpers/ui.js";
 import { App } from "./ui/App.js";
 
 test("runs commands in parallel and renders updates", async () => {
@@ -19,11 +20,17 @@ test("runs commands in parallel and renders updates", async () => {
     },
   ];
 
-  const store = new ChecksStore(definitions, Date.now());
+  const project = {
+    project: "integration",
+    path: "/tmp/checks.config.json",
+    checks: definitions,
+  };
+
+  const store = new Suite({ projects: [project] }, Date.now());
   const controller = new AbortController();
   const input: Input = {
-    config: { checks: definitions },
-    options: { interactive: false, failFast: false },
+    projects: [project],
+    options: { interactive: false, failFast: false, recursive: false },
   };
   const ink = render(
     <App
@@ -44,8 +51,9 @@ test("runs commands in parallel and renders updates", async () => {
   await store.waitForCompletion();
   await delay(10);
 
-  const finalFrame = ink.lastFrame() ?? "";
-  assert.match(finalFrame, /Summary: total 2/);
+  const finalFrame = stripAnsi(ink.lastFrame() ?? "");
+  assert.match(finalFrame, /integration/);
+  assert.match(finalFrame, /1 passed.*1 failed.*0 aborted/);
   assert.match(finalFrame, /passed/);
   assert.match(finalFrame, /failed/);
   assert.match(finalFrame, /bravo/);

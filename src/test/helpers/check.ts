@@ -9,7 +9,6 @@ interface CreateCheckOptions {
   errorMessage?: string | null;
   name?: string;
   command?: string;
-  index?: number;
 }
 
 export function createCheck({
@@ -20,7 +19,6 @@ export function createCheck({
   errorMessage = null,
   name = "demo",
   command = "echo hi",
-  index = 0,
   log = [],
 }: CreateCheckOptions): CheckState {
   const result: CheckResult =
@@ -42,7 +40,6 @@ export function createCheck({
           : { status, finishedAt };
 
   return {
-    index,
     name,
     command,
     startedAt,

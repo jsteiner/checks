@@ -1,5 +1,5 @@
 import type { Input } from "../input/index.js";
-import type { ChecksStore } from "../state/ChecksStore.js";
+import type { Suite } from "../state/Suite.js";
 import type { CheckStatus } from "../types.js";
 import { CheckExecutor } from "./CheckExecutor.js";
 import { createDefaultSpawner, type SpawnFunction } from "./PtyProcess.js";
@@ -12,7 +12,7 @@ export class Executor {
 
   constructor(
     private readonly input: Input,
-    private readonly store: ChecksStore,
+    private readonly store: Suite,
     parentSignal: AbortSignal,
     spawnFn: SpawnFunction = createDefaultSpawner(),
   ) {
@@ -27,13 +27,15 @@ export class Executor {
     const failFast = this.input.options.failFast;
     try {
       await Promise.all(
-        this.input.config.checks.map((_, index) =>
-          this.executeSingleCheck(index).then((status) => {
-            if (failFast && status === "failed" && !this.signal.aborted) {
-              this.abortController.abort();
-            }
-            return status;
-          }),
+        this.input.projects.flatMap((config, projectIndex) =>
+          config.checks.map((_, checkIndex) =>
+            this.executeSingleCheck(projectIndex, checkIndex).then((status) => {
+              if (failFast && status === "failed" && !this.signal.aborted) {
+                this.abortController.abort();
+              }
+              return status;
+            }),
+          ),
         ),
       );
     } finally {
@@ -41,8 +43,11 @@ export class Executor {
     }
   }
 
-  private executeSingleCheck(index: number): Promise<CheckStatus> {
-    const check = this.store.getCheck(index);
+  private executeSingleCheck(
+    projectIndex: number,
+    checkIndex: number,
+  ): Promise<CheckStatus> {
+    const check = this.store.getCheck(projectIndex, checkIndex);
     const runner = new CheckExecutor(this.signal, this.spawnFn);
     return runner.run(check);
   }

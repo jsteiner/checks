@@ -1,16 +1,17 @@
 import { Box } from "ink";
-import type { CheckState } from "../types.js";
+import type { CheckState } from "../../types.js";
 import { CheckOutput } from "./CheckOutput.js";
-import { CheckRow } from "./CheckRow.js";
+import { CheckSummary } from "./CheckSummary.js";
 
 interface CheckProps {
   check: CheckState;
   showOutput: boolean;
+  index: number;
 }
 
 const borderColor = "cyan";
 
-export function Check({ check, showOutput }: CheckProps) {
+export function Check({ check, showOutput, index }: CheckProps) {
   return (
     <Box
       flexDirection="column"
@@ -21,7 +22,7 @@ export function Check({ check, showOutput }: CheckProps) {
     >
       <CheckOutput check={check} showOutput={showOutput} />
       {!showOutput ? null : <Divider />}
-      <CheckRow check={check} />
+      <CheckSummary check={check} index={index} />
     </Box>
   );
 }
