@@ -2,41 +2,18 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
 import { ChecksStore } from "../state/ChecksStore.js";
+import {
+  stripAnsi,
+  tick,
+  waitFor,
+  waitForFrameMatch,
+} from "../test/helpers/ui.js";
 import { App } from "./App.js";
 
 const SAMPLE_CHECKS = [
   { name: "first", command: "echo first" },
   { name: "second", command: "echo second" },
 ];
-
-type InkInstance = ReturnType<typeof render>;
-
-async function tick() {
-  await new Promise<void>((resolve) => setImmediate(resolve));
-}
-
-async function waitFor(condition: () => boolean, timeoutMs = 250) {
-  const deadline = Date.now() + timeoutMs;
-  while (!condition()) {
-    if (Date.now() > deadline) {
-      assert.fail("Timed out while waiting for condition");
-    }
-    await tick();
-  }
-}
-
-async function waitForFrameMatch(
-  ink: InkInstance,
-  regex: RegExp,
-  timeoutMs = 250,
-): Promise<string> {
-  let frame = "";
-  await waitFor(() => {
-    frame = ink.lastFrame() ?? "";
-    return regex.test(frame);
-  }, timeoutMs);
-  return frame;
-}
 
 test("shows interactive legend and focuses/unfocuses checks", async () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
@@ -61,6 +38,8 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /alpha/);
   assert.doesNotMatch(frame, /bravo/);
+  const plainFrame = stripAnsi(frame);
+  assert.match(plainFrame, /x:\s+unfocus\s+\|\s+<n>:\s+focus\s+\|\s+q:\s+quit/);
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /second/);

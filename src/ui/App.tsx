@@ -1,16 +1,10 @@
-import { useApp } from "ink";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { Box, useApp } from "ink";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { ChecksStore } from "../state/ChecksStore.js";
 import { CheckListView } from "./CheckListView.js";
 import { FocusedView } from "./FocusedView.js";
 import { LayoutProvider } from "./LayoutContext.js";
-import type { HotkeyConfig } from "./types.js";
+import { Legend } from "./Legend.js";
 
 interface AppProps {
   store: ChecksStore;
@@ -38,19 +32,6 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
     setFocusedIndex(nextIndex);
   }, []);
 
-  const globalHotkeys = useMemo(
-    () =>
-      createGlobalHotkeys({
-        allDone,
-        maxFocusableIndex,
-        focusedIndex,
-        onFocusChange,
-        onAbort,
-        onQuit: exit,
-      }),
-    [allDone, exit, focusedIndex, maxFocusableIndex, onAbort, onFocusChange],
-  );
-
   useEffect(() => {
     if (!interactive && allDone) {
       exit();
@@ -71,74 +52,26 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   return (
     <LayoutProvider checks={checks}>
       {focusedCheck ? (
-        <FocusedView
-          check={focusedCheck}
-          onFocusChange={onFocusChange}
-          globalHotkeys={globalHotkeys}
-          interactive={interactive}
-        />
+        <FocusedView check={focusedCheck} />
       ) : (
-        <CheckListView
-          checks={checks}
-          allDone={allDone}
-          summary={summary}
-          interactive={interactive}
-          globalHotkeys={globalHotkeys}
-        />
+        <CheckListView checks={checks} allDone={allDone} summary={summary} />
       )}
+      {interactive ? (
+        <Box
+          marginTop={1}
+          key={focusedIndex === null ? "legend-list" : `legend-${focusedIndex}`}
+        >
+          <Legend
+            interactive={interactive}
+            allDone={allDone}
+            focusedIndex={focusedIndex}
+            maxFocusableIndex={maxFocusableIndex}
+            onFocusChange={onFocusChange}
+            onAbort={onAbort}
+            onQuit={exit}
+          />
+        </Box>
+      ) : null}
     </LayoutProvider>
   );
-}
-
-function createGlobalHotkeys({
-  allDone,
-  maxFocusableIndex,
-  focusedIndex,
-  onFocusChange,
-  onAbort,
-  onQuit,
-}: {
-  allDone: boolean;
-  maxFocusableIndex: number;
-  focusedIndex: number | null;
-  onFocusChange: (index: number | null) => void;
-  onAbort: () => void;
-  onQuit: () => void;
-}): HotkeyConfig[] {
-  return [
-    {
-      keys: "<n>",
-      description: "focus",
-      handler: (input) => {
-        const index = parseNumberKey(input);
-        if (index === null || index > maxFocusableIndex) return;
-        if (index === focusedIndex) {
-          onFocusChange(null);
-          return;
-        }
-        onFocusChange(index);
-      },
-      match: (input) => {
-        const index = parseNumberKey(input);
-        return index !== null && index <= maxFocusableIndex;
-      },
-    },
-    {
-      keys: "q",
-      description: "quit",
-      handler: () => {
-        if (!allDone) {
-          onAbort();
-        }
-        onQuit();
-      },
-    },
-  ];
-}
-
-function parseNumberKey(input: string): number | null {
-  if (input.length !== 1) return null;
-  const code = input.charCodeAt(0);
-  if (code < 49 || code > 57) return null; // 1-9
-  return Number.parseInt(input, 10) - 1;
 }

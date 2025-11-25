@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
 import type { ReactElement } from "react";
+import { stripAnsi } from "../test/helpers/ui.js";
 import type { CheckState } from "../types.js";
 import { CheckRow } from "./CheckRow.js";
 import { LayoutProvider } from "./LayoutContext.js";
@@ -55,12 +56,6 @@ test("pads the command so durations align", () => {
   const pattern = new RegExp(`echo hi {${expectedSpacing}}0\\.50s$`);
   assert.match(frame, pattern);
 });
-
-function stripAnsi(value: string): string {
-  const escapeChar = String.fromCharCode(27);
-  const pattern = new RegExp(`${escapeChar}\\[[0-9;]*m`, "g");
-  return value.replace(pattern, "");
-}
 
 function renderWithLayout(element: ReactElement, checks: CheckState[]) {
   return render(<LayoutProvider checks={checks}>{element}</LayoutProvider>);
