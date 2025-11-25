@@ -1,10 +1,10 @@
 import { Box, useApp } from "ink";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { ChecksStore } from "../state/ChecksStore.js";
-import { CheckListView } from "./CheckListView.js";
 import { FocusedView } from "./FocusedView.js";
 import { LayoutProvider } from "./LayoutContext.js";
 import { Legend } from "./Legend.js";
+import { ListView } from "./ListView.js";
 
 interface AppProps {
   store: ChecksStore;
@@ -54,7 +54,7 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
       {focusedCheck ? (
         <FocusedView check={focusedCheck} />
       ) : (
-        <CheckListView checks={checks} allDone={allDone} summary={summary} />
+        <ListView checks={checks} allDone={allDone} summary={summary} />
       )}
       {interactive ? (
         <Box

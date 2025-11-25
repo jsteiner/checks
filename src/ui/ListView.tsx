@@ -10,11 +10,7 @@ interface CheckListViewProps {
   summary: ReturnType<ChecksStore["summary"]>;
 }
 
-export function CheckListView({
-  checks,
-  allDone,
-  summary,
-}: CheckListViewProps) {
+export function ListView({ checks, allDone, summary }: CheckListViewProps) {
   return (
     <Box flexDirection="column">
       {checks.map((check) => (
