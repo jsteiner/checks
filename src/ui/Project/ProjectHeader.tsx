@@ -32,6 +32,21 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
 
 function ProjectStatus({ project }: ProjectHeaderProps) {
   const { summary } = project;
+
+  const allPassed =
+    summary.total > 0 &&
+    summary.passed === summary.total &&
+    summary.failed === 0 &&
+    summary.aborted === 0;
+
+  if (allPassed) {
+    return (
+      <Box gap={2}>
+        <Text color={STATUS_COLORS.passed}>all passed</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box gap={2}>
       <Text color={STATUS_COLORS.passed}>

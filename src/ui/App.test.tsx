@@ -35,11 +35,11 @@ test("shows project header with a compact summary", async () => {
   store.getCheck(0, 0).markPassed(0);
   store.getCheck(0, 1).markPassed(0);
 
-  const frame = stripAnsi(
-    await waitForFrameMatch(ink, /2 passed.*0 failed.*0 aborted/),
-  );
+  const frame = stripAnsi(await waitForFrameMatch(ink, /all passed/));
   assert.match(frame, /sample/);
   assert.match(frame, /first/);
+  assert.doesNotMatch(frame, /failed/);
+  assert.doesNotMatch(frame, /aborted/);
 
   ink.unmount();
 });
