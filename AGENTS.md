@@ -16,3 +16,7 @@ You have access to the following `pnpm` scripts:
 # Workflow
 
 - You MUST get all checks in `pnpm checks` passing before considering yourself finished with your work.
+
+# Architecture
+
+- Extract shared test helpers to `src/test/helpers`.
