@@ -1,3 +1,5 @@
+import type { ProjectColor } from "./projectColors.js";
+
 export interface CheckDefinition {
   name: string;
   command: string;
@@ -7,6 +9,7 @@ export interface ProjectDefinition {
   project: string;
   path: string;
   checks: CheckDefinition[];
+  color: ProjectColor;
 }
 
 export interface LogEntry {
@@ -20,6 +23,7 @@ export interface CheckState extends CheckDefinition {
 }
 
 export interface ProjectState extends ProjectDefinition {
+  color: ProjectColor;
   checks: CheckState[];
   summary: Summary;
   isComplete: boolean;

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { getDefaultProjectColor } from "../projectColors.js";
 import { Project } from "../state/Project.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import type { CheckDefinition, CheckResult } from "../types.js";
@@ -12,7 +13,12 @@ async function executeCheck(
   controller: AbortController = new AbortController(),
 ) {
   const store = new Project(
-    { project: "config", path: "/tmp/checks.config.json", checks: [check] },
+    {
+      project: "config",
+      path: "/tmp/checks.config.json",
+      color: getDefaultProjectColor(0),
+      checks: [check],
+    },
     0,
     Date.now(),
   );

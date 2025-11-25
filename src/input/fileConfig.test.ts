@@ -97,3 +97,14 @@ test("parses a valid config", async () => {
   assert.equal(config.checks.length, 2);
   assert.deepEqual(config.checks[0], { name: "lint", command: "pnpm lint" });
 });
+
+test("parses an optional project color", async () => {
+  const filePath = await createConfigFile({
+    project: "demo",
+    color: "magenta",
+    checks: [{ name: "lint", command: "pnpm lint" }],
+  });
+
+  const config = await loadFileConfig(filePath);
+  assert.equal(config.color, "magenta");
+});

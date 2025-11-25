@@ -18,7 +18,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       marginTop={1}
       gap={HEADER_PADDING}
     >
-      <Text color="cyan">{project.project}</Text>
+      <Text color={project.color}>{project.project}</Text>
       {project.isComplete ? (
         <Box flexGrow={1} flexDirection="row">
           <ProjectStatus project={project} />

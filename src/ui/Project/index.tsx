@@ -21,6 +21,7 @@ export function Project({ project, startIndex, marginTop = 0 }: ProjectProps) {
         return (
           <Check
             key={`${project.path}-${index}`}
+            color={project.color}
             check={check}
             index={index}
             showOutput={check.result.status === "failed"}

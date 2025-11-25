@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import type { ProjectColor } from "../projectColors.js";
 import type { ProjectDefinition, ProjectState, Summary } from "../types.js";
 import { Check } from "./Check.js";
 import { combineSummaries } from "./summary.js";
@@ -7,6 +8,7 @@ export class Project {
   readonly project: string;
   readonly path: string;
   readonly index: number;
+  readonly color: ProjectColor;
 
   private readonly emitter = new EventEmitter();
   private readonly checks: Check[];
@@ -22,6 +24,7 @@ export class Project {
     this.project = project.project;
     this.path = project.path;
     this.index = projectIndex;
+    this.color = project.color;
     this.checks = project.checks.map(
       (definition) => new Check(definition, startedAt, this.handleCheckUpdate),
     );
@@ -64,6 +67,7 @@ export class Project {
     return {
       project: this.project,
       path: this.path,
+      color: this.color,
       checks: this.checks.map((check) => check.toState()),
       summary: this.summary(),
       isComplete: this.isComplete(),

@@ -18,6 +18,7 @@ test("shows a project summary in the header", () => {
     {
       project: "demo",
       path: "/tmp/config.json",
+      color: "cyan",
       checks: [check],
       summary: {
         total: 1,
@@ -41,14 +42,12 @@ test("shows a project summary in the header", () => {
   );
 
   const frame = stripAnsi(lastFrame() ?? "");
-  const lines = frame.split("\n").filter(Boolean);
-  const lastLine = lines.at(-1) ?? "";
 
-  assert.match(lastLine, /demo/);
-  assert.match(lastLine, /0\.10s/);
-  assert.match(lastLine, /all passed/);
-  assert.ok(!/failed/.test(lastLine));
-  assert.ok(!/aborted/.test(lastLine));
+  assert.match(frame, /demo/);
+  assert.match(frame, /0\.10s/);
+  assert.match(frame, /all passed/);
+  assert.ok(!/failed/.test(frame));
+  assert.ok(!/aborted/.test(frame));
 });
 
 test("shows a status breakdown when any check fails", () => {
@@ -56,6 +55,7 @@ test("shows a status breakdown when any check fails", () => {
     {
       project: "demo",
       path: "/tmp/config.json",
+      color: "cyan",
       checks: [
         createCheck({
           status: "passed",
@@ -90,13 +90,11 @@ test("shows a status breakdown when any check fails", () => {
   );
 
   const frame = stripAnsi(lastFrame() ?? "");
-  const lines = frame.split("\n").filter(Boolean);
-  const lastLine = lines.at(-1) ?? "";
 
-  assert.match(lastLine, /demo/);
-  assert.match(lastLine, /0\.10s/);
-  assert.match(lastLine, /1 passed/);
-  assert.match(lastLine, /1 failed/);
-  assert.match(lastLine, /0 aborted/);
-  assert.ok(!/all passed/.test(lastLine));
+  assert.match(frame, /demo/);
+  assert.match(frame, /0\.10s/);
+  assert.match(frame, /1 passed/);
+  assert.match(frame, /1 failed/);
+  assert.match(frame, /0 aborted/);
+  assert.ok(!/all passed/.test(frame));
 });

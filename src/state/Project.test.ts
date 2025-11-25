@@ -12,6 +12,7 @@ const SAMPLE_CHECKS = [
 const SAMPLE_PROJECT = {
   project: "demo",
   path: "/tmp/checks.config.json",
+  color: "cyan",
   checks: SAMPLE_CHECKS,
 };
 

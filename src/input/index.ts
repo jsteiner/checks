@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { resolveProjectColor } from "../projectColors.js";
 import type { ProjectDefinition, SuiteDefinition } from "../types.js";
 import { type CLIOptions, parseCLIOptions } from "./cli.js";
 import {
@@ -20,9 +21,13 @@ export async function buildInput(
   const options = parseCLIOptions(argv);
   const paths = await discoverConfigPaths(configPath, options.recursive);
   const projects: ProjectDefinition[] = await Promise.all(
-    paths.map(async (path) => {
+    paths.map(async (path, index) => {
       const config = await loadFileConfig(path);
-      return { ...config, path };
+      return {
+        ...config,
+        color: resolveProjectColor(config.color, index),
+        path,
+      };
     }),
   );
 

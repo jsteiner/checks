@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
+import { getDefaultProjectColor } from "../projectColors.js";
 import { Suite } from "../state/Suite.js";
 import {
   stripAnsi,
@@ -17,6 +18,7 @@ const SAMPLE_CHECKS = [
 const SAMPLE_PROJECT = {
   project: "sample",
   path: "/tmp/checks.config.json",
+  color: getDefaultProjectColor(0),
   checks: SAMPLE_CHECKS,
 };
 
