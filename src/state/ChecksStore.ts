@@ -55,8 +55,9 @@ export class ChecksStore {
     }
   }
 
-  summary(now: number = Date.now()): Summary {
+  summary(): Summary {
     const total = this.checks.length;
+    let lastFinishedAt: number | null = null;
     const { passed, failed, aborted } = this.checks.reduce(
       (tally, check) => {
         switch (check.status) {
@@ -70,17 +71,26 @@ export class ChecksStore {
             tally.aborted += 1;
             break;
         }
+        if (check.finishedAt !== null) {
+          lastFinishedAt =
+            lastFinishedAt === null
+              ? check.finishedAt
+              : Math.max(lastFinishedAt, check.finishedAt);
+        }
         return tally;
       },
       { passed: 0, failed: 0, aborted: 0 },
     );
+
+    const durationMs =
+      lastFinishedAt === null ? 0 : lastFinishedAt - this.startedAt;
 
     return {
       total,
       passed,
       failed,
       aborted,
-      durationMs: Math.max(0, now - this.startedAt),
+      durationMs,
     };
   }
 

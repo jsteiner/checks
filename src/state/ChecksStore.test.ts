@@ -50,6 +50,27 @@ test("summarizes run results", () => {
   assert.ok(summary.durationMs >= 0);
 });
 
+test("summary duration reflects last finished check time", () => {
+  const originalNow = Date.now;
+  let fakeNow = 0;
+  Date.now = () => fakeNow;
+
+  try {
+    const store = new ChecksStore(SAMPLE_CHECKS, fakeNow);
+    fakeNow = 125;
+    store.markPassed(0, 0);
+
+    fakeNow = 250;
+    store.markFailed(1, 1, null);
+
+    fakeNow = 1000;
+    const summary = store.summary();
+    assert.equal(summary.durationMs, 250);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
 test("waitForCompletion resolves when all checks finish", async () => {
   const store = new ChecksStore(SAMPLE_CHECKS, Date.now());
   const waitPromise = store.waitForCompletion();

@@ -28,6 +28,11 @@ export class Check {
     return this.result.status;
   }
 
+  get finishedAt(): number | null {
+    if (this.result.status === "running") return null;
+    return this.result.finishedAt;
+  }
+
   appendStdout(chunk: Buffer | string): boolean {
     const next = chunk.toString();
     if (!next) return false;
