@@ -1,6 +1,6 @@
 import { Box, Spacer, Text } from "ink";
-import { formatCheckDurationLabel } from "../../display.js";
 import type { CheckState, CheckStatus } from "../../types.js";
+import { formatCheckDurationLabel } from "../display.js";
 import { useLayout } from "../LayoutContext.js";
 import { LONG_STATUS_WIDTH, STATUS_COLORS, STATUS_LABELS } from "../status.js";
 

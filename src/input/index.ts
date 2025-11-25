@@ -1,8 +1,8 @@
-import { resolveProjectColor } from "../projectColors.js";
 import type { ProjectDefinition, SuiteDefinition } from "../types.js";
 import { type CLIOptions, parseCLIOptions } from "./cli.js";
 import { discoverConfigPaths } from "./discoverConfigPaths.js";
 import { FILE_CONFIG_PATH, loadFileConfig } from "./fileConfig.js";
+import { resolveProjectColor } from "./projectColors.js";
 
 export interface Input extends SuiteDefinition {
   projects: ProjectDefinition[];

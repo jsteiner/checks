@@ -4,7 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
 import { Executor } from "./executor/index.js";
 import type { Input } from "./input/index.js";
-import { getDefaultProjectColor } from "./projectColors.js";
+import { getDefaultProjectColor } from "./input/projectColors.js";
 import { Suite } from "./state/Suite.js";
 import { stripAnsi } from "./test/helpers/ui.js";
 import { App } from "./ui/App.js";

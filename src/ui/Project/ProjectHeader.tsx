@@ -1,6 +1,6 @@
 import { Box, Spacer, Text } from "ink";
-import { formatDuration } from "../../display.js";
 import type { ProjectState } from "../../types.js";
+import { formatDuration } from "../display.js";
 import { STATUS_COLORS, STATUS_LABELS } from "../status.js";
 
 const HEADER_PADDING = 2;

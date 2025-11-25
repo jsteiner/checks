@@ -1,5 +1,5 @@
 import { Box } from "ink";
-import type { ProjectColor } from "../../projectColors.js";
+import type { ProjectColor } from "../../input/projectColors.js";
 import type { CheckState } from "../../types.js";
 import { CheckOutput } from "./CheckOutput.js";
 import { CheckSummary } from "./CheckSummary.js";

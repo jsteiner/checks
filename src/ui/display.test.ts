@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createCheck } from "../test/helpers/check.js";
 import { formatCheckDurationLabel, formatDuration } from "./display.js";
-import { createCheck } from "./test/helpers/check.js";
 
 test("formatDuration shows seconds with two decimals", () => {
   assert.equal(formatDuration(0), "0.00s");

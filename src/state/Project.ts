@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { ProjectColor } from "../projectColors.js";
+import type { ProjectColor } from "../input/projectColors.js";
 import type { ProjectDefinition, ProjectState, Summary } from "../types.js";
 import { Check } from "./Check.js";
 import { combineSummaries } from "./summary.js";

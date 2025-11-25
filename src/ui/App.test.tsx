@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import { getDefaultProjectColor } from "../projectColors.js";
+import { getDefaultProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
 import {
   stripAnsi,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getDefaultProjectColor } from "../projectColors.js";
+import { getDefaultProjectColor } from "../input/projectColors.js";
 import { Project } from "../state/Project.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import type { CheckDefinition, CheckResult } from "../types.js";

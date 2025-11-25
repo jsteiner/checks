@@ -1,4 +1,4 @@
-import type { ProjectColor } from "./projectColors.js";
+import type { ProjectColor } from "./input/projectColors.js";
 
 export interface CheckDefinition {
   name: string;

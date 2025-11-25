@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Input } from "../input/index.js";
-import { getDefaultProjectColor } from "../projectColors.js";
+import { getDefaultProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import { Executor } from "./index.js";

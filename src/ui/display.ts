@@ -1,4 +1,4 @@
-import type { CheckState } from "./types.js";
+import type { CheckState } from "../types.js";
 
 export function formatDuration(ms: number) {
   return `${(ms / 1000).toFixed(2)}s`;
