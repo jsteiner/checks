@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint:biome": "biome check --write",
     "test": "tsx scripts/run-tests.ts",
-    "precommit": "pnpm build; pnpm start"
+    "checks": "pnpm build; pnpm start"
   },
   "keywords": [],
   "author": "",
