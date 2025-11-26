@@ -4,6 +4,8 @@ import { filterProjectsByRules } from "./checkFilters.js";
 import type { CheckFilterRule } from "./cli.js";
 import { getDefaultProjectColor } from "./projectColors.js";
 
+type Summary = { project: string; checks: string[] };
+
 const sampleProjects = [
   {
     project: "web",
@@ -27,6 +29,40 @@ const sampleProjects = [
   },
 ];
 
+const summarize = (projects: typeof sampleProjects): Summary[] =>
+  projects.map((project) => ({
+    project: project.project,
+    checks: project.checks.map((check) => check.name),
+  }));
+
+test("filters by only and exclude options", () => {
+  const filters: CheckFilterRule[] = [
+    { type: "only", pattern: "web/lint:*" },
+    { type: "exclude", pattern: "*/lint:deep**" },
+    { type: "only", pattern: "mobile/lint" },
+  ];
+
+  const filtered = filterProjectsByRules(sampleProjects, filters);
+
+  assert.deepEqual(filtered, [
+    {
+      project: "web",
+      path: "/tmp/web/checks.config.json",
+      color: getDefaultProjectColor(0),
+      checks: [
+        { name: "lint:biome", command: "pnpm lint web" },
+        { name: "lint:ast", command: "pnpm lint web --ast" },
+      ],
+    },
+    {
+      project: "mobile",
+      path: "/tmp/mobile/checks.config.json",
+      color: getDefaultProjectColor(1),
+      checks: [{ name: "lint", command: "pnpm lint mobile" }],
+    },
+  ]);
+});
+
 test("glob rules match checks and honor last rule wins", () => {
   const filters: CheckFilterRule[] = [
     { type: "only", pattern: "lint*" },
@@ -36,13 +72,10 @@ test("glob rules match checks and honor last rule wins", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  const web = filtered.find((project) => project.project === "web");
-  const mobile = filtered.find((project) => project.project === "mobile");
-
-  assert.ok(web);
-  assert.ok(mobile);
-  assert.deepEqual(web?.checks.map((check) => check.name), ["lint:biome"]);
-  assert.deepEqual(mobile?.checks.map((check) => check.name), ["lint"]);
+  assert.deepEqual(summarize(filtered), [
+    { project: "web", checks: ["lint:biome"] },
+    { project: "mobile", checks: ["lint"] },
+  ]);
 });
 
 test("single and double stars control depth of matches", () => {
@@ -53,16 +86,11 @@ test("single and double stars control depth of matches", () => {
   ];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
-  const web = filtered.find((project) => project.project === "web");
-  const mobile = filtered.find((project) => project.project === "mobile");
 
-  assert.ok(web);
-  assert.ok(mobile);
-  assert.deepEqual(web?.checks.map((check) => check.name), [
-    "lint:biome",
-    "lint:ast",
+  assert.deepEqual(summarize(filtered), [
+    { project: "web", checks: ["lint:biome", "lint:ast"] },
+    { project: "mobile", checks: ["lint"] },
   ]);
-  assert.deepEqual(mobile?.checks.map((check) => check.name), ["lint"]);
 });
 
 test("project patterns use the same glob rules", () => {
@@ -72,10 +100,7 @@ test("project patterns use the same glob rules", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assert.equal(filtered.length, 1);
-  assert.equal(filtered[0]?.project, "web");
-  assert.deepEqual(
-    filtered[0]?.checks.map((check) => check.name),
-    ["lint:biome", "lint:ast", "lint:deep:check"],
-  );
+  assert.deepEqual(summarize(filtered), [
+    { project: "web", checks: ["lint:biome", "lint:ast", "lint:deep:check"] },
+  ]);
 });
