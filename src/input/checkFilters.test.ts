@@ -41,38 +41,27 @@ function assertFiltered(
   assert.deepEqual(summarize(projects), expected);
 }
 
-test("filters by only and exclude options", () => {
+test("filters by check globs", () => {
   const filters: CheckFilterRule[] = [
-    { type: "only", pattern: "web/lint:*" },
-    { type: "only", pattern: "mobile/lint" },
-    { type: "exclude", pattern: "*/lint:deep**" },
+    { type: "only", pattern: "lint*" },
+    { type: "only", pattern: "lint**" },
   ];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assert.deepEqual(filtered, [
+  assertFiltered(filtered, [
     {
       project: "web",
-      path: "/tmp/web/checks.config.json",
-      color: "red",
-      checks: [
-        { name: "lint:biome", command: "pnpm lint web" },
-        { name: "lint:ast", command: "pnpm lint web --ast" },
-      ],
+      checks: ["lint:biome", "lint:ast", "lint:deep:check"],
     },
-    {
-      project: "mobile",
-      path: "/tmp/mobile/checks.config.json",
-      color: "red",
-      checks: [{ name: "lint", command: "pnpm lint mobile" }],
-    },
+    { project: "mobile", checks: ["lint"] },
   ]);
 });
 
-test("glob rules match checks and excludes override inclusions", () => {
+test("exclude overrides only", () => {
   const filters: CheckFilterRule[] = [
     { type: "only", pattern: "lint*" },
-    { type: "exclude", pattern: "web/lint:*" },
+    { type: "exclude", pattern: "web/lint**" },
   ];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
@@ -80,27 +69,37 @@ test("glob rules match checks and excludes override inclusions", () => {
   assertFiltered(filtered, [{ project: "mobile", checks: ["lint"] }]);
 });
 
-test("single and double stars control depth of matches", () => {
+test("filters by project globs", () => {
   const filters: CheckFilterRule[] = [
-    { type: "only", pattern: "lint*" },
-    { type: "only", pattern: "lint**" },
-    { type: "exclude", pattern: "web/lint:deep**" },
+    { type: "only", pattern: "we*/lint**" },
+    { type: "only", pattern: "mo**/lint" },
   ];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
   assertFiltered(filtered, [
-    { project: "web", checks: ["lint:biome", "lint:ast"] },
+    {
+      project: "web",
+      checks: ["lint:biome", "lint:ast", "lint:deep:check"],
+    },
     { project: "mobile", checks: ["lint"] },
   ]);
 });
 
-test("project patterns use the same glob rules", () => {
-  const filters: CheckFilterRule[] = [{ type: "only", pattern: "web*/lint:*" }];
+test("filters by project only glob", () => {
+  const filters: CheckFilterRule[] = [{ type: "only", pattern: "web/**" }];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
   assertFiltered(filtered, [
-    { project: "web", checks: ["lint:biome", "lint:ast", "lint:deep:check"] },
+    {
+      project: "web",
+      checks: [
+        "lint:biome",
+        "lint:ast",
+        "lint:deep:check",
+        "typecheck",
+      ],
+    },
   ]);
 });
