@@ -100,9 +100,7 @@ test("single and double stars control depth of matches", () => {
 });
 
 test("project patterns use the same glob rules", () => {
-  const filters: CheckFilterRule[] = [
-    { type: "only", pattern: "web*/lint:*" },
-  ];
+  const filters: CheckFilterRule[] = [{ type: "only", pattern: "web*/lint:*" }];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
