@@ -26,6 +26,7 @@ async function executeChecks(
       interactive: false,
       failFast: false,
       recursive: false,
+      filters: [],
       ...options,
     },
   };

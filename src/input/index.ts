@@ -1,4 +1,5 @@
 import type { ProjectDefinition, SuiteDefinition } from "../types.js";
+import { filterProjectsByRules } from "./checkFilters.js";
 import { type CLIOptions, parseCLIOptions } from "./cli.js";
 import { discoverConfigPaths } from "./discoverConfigPaths.js";
 import { FILE_CONFIG_PATH, loadFileConfig } from "./fileConfig.js";
@@ -15,15 +16,18 @@ export async function buildInput(
 ): Promise<Input> {
   const options = parseCLIOptions(argv);
   const paths = await discoverConfigPaths(configPath, options.recursive);
-  const projects: ProjectDefinition[] = await Promise.all(
-    paths.map(async (path, index) => {
-      const config = await loadFileConfig(path);
-      return {
-        ...config,
-        color: resolveProjectColor(config.color, index),
-        path,
-      };
-    }),
+  const projects: ProjectDefinition[] = filterProjectsByRules(
+    await Promise.all(
+      paths.map(async (path, index) => {
+        const config = await loadFileConfig(path);
+        return {
+          ...config,
+          color: resolveProjectColor(config.color, index),
+          path,
+        };
+      }),
+    ),
+    options.filters,
   );
 
   return { projects, options };

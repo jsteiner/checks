@@ -32,7 +32,12 @@ test("runs commands in parallel and renders updates", async () => {
   const controller = new AbortController();
   const input: Input = {
     projects: [project],
-    options: { interactive: false, failFast: false, recursive: false },
+    options: {
+      interactive: false,
+      failFast: false,
+      recursive: false,
+      filters: [],
+    },
   };
   const ink = render(
     <App

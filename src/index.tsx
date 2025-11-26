@@ -1,24 +1,51 @@
 #!/usr/bin/env node
 
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 import { render } from "ink";
+import React from "react";
 import { Executor } from "./executor/index.js";
 import { FILE_CONFIG_PATH, FileConfigError } from "./input/fileConfig.js";
 import { buildInput, type Input } from "./input/index.js";
 import { Suite } from "./state/Suite.js";
 import { App } from "./ui/App.js";
 
-const EXIT_CODES = {
+export const EXIT_CODES = {
   success: 0,
   orchestratorError: 1,
   checksFailed: 2,
   aborted: 3,
 } as const;
 
-async function main(
+// Ensure React runtime is available when executing via tsx in tests.
+React;
+
+type RunnerDeps = {
+  renderApp?: typeof render;
+  createExecutor?: (
+    input: Input,
+    store: Suite,
+    abortSignal: AbortSignal,
+  ) => { run: () => Promise<void> };
+  logError?: (message: string) => void;
+};
+
+const defaultDeps: Required<RunnerDeps> = {
+  renderApp: render,
+  createExecutor: (input, store, abortSignal) =>
+    new Executor(input, store, abortSignal),
+  logError: (message) => {
+    console.error(message);
+  },
+};
+
+export async function runChecks(
   configPath: string = FILE_CONFIG_PATH,
   argv: string[] = process.argv,
-) {
+  deps: RunnerDeps = {},
+): Promise<number> {
+  const { renderApp, createExecutor, logError } = { ...defaultDeps, ...deps };
+
   const startTime = Date.now();
   const abortController = new AbortController();
   installInterruptHandler(abortController);
@@ -28,16 +55,16 @@ async function main(
     input = await buildInput(configPath, argv);
   } catch (error) {
     const message =
-      error instanceof FileConfigError
+      error instanceof FileConfigError || error instanceof Error
         ? error.message
         : "Unexpected error while loading configuration";
-    console.error(message);
-    process.exit(EXIT_CODES.orchestratorError);
+    logError(message);
+    return EXIT_CODES.orchestratorError;
   }
 
   const store = new Suite({ projects: input.projects }, startTime);
-  const executor = new Executor(input, store, abortController.signal);
-  const ink = render(
+  const executor = createExecutor(input, store, abortController.signal);
+  const ink = renderApp(
     <App
       store={store}
       interactive={input.options.interactive}
@@ -55,22 +82,30 @@ async function main(
     await Promise.all([executor.run(), store.waitForCompletion()]);
     await exitPromise;
   } catch (error) {
-    console.error(
+    logError(
       error instanceof Error ? error.message : "Unexpected runtime error",
     );
-    exitWithNewline(EXIT_CODES.orchestratorError);
+    return EXIT_CODES.orchestratorError;
   }
 
   const { summary } = store.toState();
   if (abortController.signal.aborted || summary.aborted > 0) {
-    exitWithNewline(EXIT_CODES.aborted);
+    return EXIT_CODES.aborted;
   }
 
   if (summary.failed > 0) {
-    exitWithNewline(EXIT_CODES.checksFailed);
+    return EXIT_CODES.checksFailed;
   }
 
-  exitWithNewline(EXIT_CODES.success);
+  return EXIT_CODES.success;
+}
+
+async function main(
+  configPath: string = FILE_CONFIG_PATH,
+  argv: string[] = process.argv,
+) {
+  const exitCode = await runChecks(configPath, argv);
+  exitWithNewline(exitCode);
 }
 
 function installInterruptHandler(controller: AbortController) {
@@ -85,4 +120,6 @@ function exitWithNewline(exitCode: number) {
   process.exit(exitCode);
 }
 
-void main();
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  void main();
+}
