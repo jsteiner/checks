@@ -44,8 +44,8 @@ function assertFiltered(
 test("filters by only and exclude options", () => {
   const filters: CheckFilterRule[] = [
     { type: "only", pattern: "web/lint:*" },
-    { type: "exclude", pattern: "*/lint:deep**" },
     { type: "only", pattern: "mobile/lint" },
+    { type: "exclude", pattern: "*/lint:deep**" },
   ];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
@@ -69,19 +69,15 @@ test("filters by only and exclude options", () => {
   ]);
 });
 
-test("glob rules match checks and honor last rule wins", () => {
+test("glob rules match checks and excludes override inclusions", () => {
   const filters: CheckFilterRule[] = [
     { type: "only", pattern: "lint*" },
     { type: "exclude", pattern: "web/lint:*" },
-    { type: "only", pattern: "web/lint:biome" },
   ];
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assertFiltered(filtered, [
-    { project: "web", checks: ["lint:biome"] },
-    { project: "mobile", checks: ["lint"] },
-  ]);
+  assertFiltered(filtered, [{ project: "mobile", checks: ["lint"] }]);
 });
 
 test("single and double stars control depth of matches", () => {

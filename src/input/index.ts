@@ -1,6 +1,6 @@
 import type { ProjectDefinition, SuiteDefinition } from "../types.js";
 import { filterProjectsByRules } from "./checkFilters.js";
-import { type CLIOptions, parseCLIOptions } from "./cli.js";
+import { type CLIOptions, parseCLIOptions, toFilterRules } from "./cli.js";
 import { discoverConfigPaths } from "./discoverConfigPaths.js";
 import { FILE_CONFIG_PATH, loadFileConfig } from "./fileConfig.js";
 import { resolveProjectColor } from "./projectColors.js";
@@ -27,7 +27,7 @@ export async function buildInput(
         };
       }),
     ),
-    options.filters,
+    toFilterRules(options),
   );
 
   return { projects, options };

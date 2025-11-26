@@ -36,7 +36,8 @@ test("runs commands in parallel and renders updates", async () => {
       interactive: false,
       failFast: false,
       recursive: false,
-      filters: [],
+      only: [],
+      exclude: [],
     },
   };
   const ink = render(
