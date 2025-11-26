@@ -9,8 +9,7 @@ export interface CLIOptions {
   interactive: boolean;
   failFast: boolean;
   recursive: boolean;
-  only?: string[];
-  exclude?: string[];
+  filters: CheckFilterRule[];
 }
 
 export function parseCLIOptions(argv: string[]): CLIOptions {
@@ -32,27 +31,38 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     )
     .option(
       "--only <pattern...>",
-      "only run checks whose name matches this pattern (variadic)",
+      "only run checks whose name matches this pattern",
       [],
     )
     .option(
       "--exclude <pattern...>",
-      "skip checks whose name matches this pattern (variadic)",
+      "skip checks whose name matches this pattern",
       [],
     );
 
   program.parse(argv);
 
-  return program.opts<CLIOptions>();
+  const { only, exclude, ...base } = program.opts<{
+    interactive: boolean;
+    failFast: boolean;
+    recursive: boolean;
+    only: string[];
+    exclude: string[];
+  }>();
+
+  return { ...base, filters: toFilterRules(only, exclude) };
 }
 
-export function toFilterRules(options: CLIOptions): CheckFilterRule[] {
+function toFilterRules(
+  only: string[],
+  exclude: string[],
+): CheckFilterRule[] {
   const from =
-    (patterns: string[] | undefined, type: CheckFilterRule["type"]) =>
-      (patterns ?? [])
+    (patterns: string[], type: CheckFilterRule["type"]) =>
+      patterns
         .map((pattern) => pattern.trim())
         .filter((pattern) => pattern.length > 0)
         .map((pattern) => ({ type, pattern }));
 
-  return [...from(options.only, "only"), ...from(options.exclude, "exclude")];
+  return [...from(only, "only"), ...from(exclude, "exclude")];
 }
