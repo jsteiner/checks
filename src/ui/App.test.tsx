@@ -61,7 +61,7 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   store.getCheck(0, 0).appendStdout("alpha");
   store.getCheck(0, 1).appendStdout("bravo");
 
-  let frame = await waitForFrameMatch(ink, /<n>:\s+focus/);
+  let frame = await waitForFrameMatch(ink, /<n> to focus/);
 
   ink.stdin.write("z");
   frame = await waitForFrameMatch(ink, /first/);
@@ -70,10 +70,7 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   frame = await waitForFrameMatch(ink, /alpha/);
   assert.doesNotMatch(frame, /bravo/);
   const plainFrame = stripAnsi(frame);
-  assert.match(
-    plainFrame,
-    /x or 1:\s+unfocus\s+\|\s+<n>:\s+focus\s+\|\s+q:\s+quit/,
-  );
+  assert.match(plainFrame, /x or 1 to unfocus · <n> to focus · q to quit/);
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /second/);
@@ -153,7 +150,7 @@ test("ignores number keys outside the focusable range", async () => {
   );
 
   ink.stdin.write("9");
-  const frame = await waitForFrameMatch(ink, /<n>:\s+focus/);
+  const frame = await waitForFrameMatch(ink, /<n> to focus/);
 
   assert.match(frame, /first/);
   assert.match(frame, /second/);

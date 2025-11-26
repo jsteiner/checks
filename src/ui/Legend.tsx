@@ -1,4 +1,4 @@
-import { Text, useInput } from "ink";
+import { Box, Text, useInput } from "ink";
 import { useMemo } from "react";
 import type { HotkeyConfig } from "./types.js";
 
@@ -52,22 +52,24 @@ export function Legend({
   );
 
   return (
-    <Text>
-      {hotkeys.map((item, index) => {
-        const isLast = index === hotkeys.length - 1;
-        return (
-          <Text key={`${item.keys}-${item.description}`}>
-            <LegendItem {...item} />
-            {isLast ? null : <Text> | </Text>}
-          </Text>
-        );
-      })}
-    </Text>
+    <Box marginTop={1} paddingLeft={2}>
+      <Text>
+        {hotkeys.map((item, index) => {
+          const isLast = index === hotkeys.length - 1;
+          return (
+            <Text key={`${item.keys}-${item.description}`} color="grey">
+              <LegendItem {...item} />
+              {isLast ? null : <Text> · </Text>}
+            </Text>
+          );
+        })}
+      </Text>
+    </Box>
   );
 }
 
-function LegendItem({ keys, description, color }: HotkeyConfig) {
-  return <Text color={color ?? "gray"}>{`${keys}: ${description}`}</Text>;
+function LegendItem({ keys, description }: HotkeyConfig) {
+  return <Text>{`${keys} to ${description}`}</Text>;
 }
 
 function createHotkeys({

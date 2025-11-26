@@ -14,10 +14,10 @@ test("renders focus and quit legend when not focused", async () => {
     />,
   );
 
-  const frame = await waitForFrameMatch(ink, /<n>:\s+focus/, {
+  const frame = await waitForFrameMatch(ink, /<n> to focus/, {
     stripAnsi: false,
   });
-  assert.match(stripAnsi(frame), /q:\s+quit/);
+  assert.match(stripAnsi(frame), /q to quit/);
   assert.doesNotMatch(frame, /unfocus/);
 
   ink.unmount();
@@ -33,7 +33,7 @@ test("shows unfocus action when a check is focused", async () => {
   );
 
   let frame = await waitForFrameMatch(ink, /focused=0/);
-  assert.match(frame, /x or 1:\s+unfocus/);
+  assert.match(frame, /x or 1 to unfocus/);
 
   ink.rerender(
     <LegendWithLabel
@@ -86,7 +86,7 @@ test("shows unfocus hotkey with the focused index", async () => {
   );
 
   const frame = await waitForFrameMatch(ink, /focused=1/);
-  assert.match(frame, /x or 2:\s+unfocus/);
+  assert.match(frame, /x or 2 to unfocus/);
 
   ink.unmount();
 });

@@ -1,4 +1,4 @@
-import { Box, useApp } from "ink";
+import { useApp } from "ink";
 import { useSyncExternalStore } from "react";
 import type { Suite as SuiteStore } from "../state/Suite.js";
 import { Check } from "./Check/index.js";
@@ -46,20 +46,16 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
         <Suite projects={projects} />
       )}
       {interactive ? (
-        <Box
-          marginTop={1}
+        <Legend
           key={focusedIndex === null ? "legend-list" : `legend-${focusedIndex}`}
-        >
-          <Legend
-            interactive={interactive}
-            isComplete={isComplete}
-            focusedIndex={focusedIndex}
-            maxFocusableIndex={maxFocusableIndex}
-            onFocusChange={onFocusChange}
-            onAbort={onAbort}
-            onQuit={exit}
-          />
-        </Box>
+          interactive={interactive}
+          isComplete={isComplete}
+          focusedIndex={focusedIndex}
+          maxFocusableIndex={maxFocusableIndex}
+          onFocusChange={onFocusChange}
+          onAbort={onAbort}
+          onQuit={exit}
+        />
       ) : null}
     </LayoutProvider>
   );

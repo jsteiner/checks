@@ -15,7 +15,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       flexDirection="row"
       paddingLeft={HEADER_PADDING}
       paddingRight={HEADER_PADDING}
-      marginTop={1}
       gap={HEADER_PADDING}
     >
       <Text color={project.color}>{project.project}</Text>
