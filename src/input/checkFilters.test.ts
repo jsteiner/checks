@@ -2,26 +2,23 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { filterProjectsByRules } from "./checkFilters.js";
 import type { CheckFilterRule } from "./cli.js";
-import { getDefaultProjectColor } from "./projectColors.js";
-
-type Summary = { project: string; checks: string[] };
 
 const sampleProjects = [
   {
     project: "web",
     path: "/tmp/web/checks.config.json",
-    color: getDefaultProjectColor(0),
-  checks: [
-    { name: "lint:biome", command: "pnpm lint web" },
-    { name: "lint:ast", command: "pnpm lint web --ast" },
-    { name: "lint:deep:check", command: "pnpm lint web --deep" },
-    { name: "typecheck", command: "pnpm typecheck web" },
-  ],
-},
+    color: "red",
+    checks: [
+      { name: "lint:biome", command: "pnpm lint web" },
+      { name: "lint:ast", command: "pnpm lint web --ast" },
+      { name: "lint:deep:check", command: "pnpm lint web --deep" },
+      { name: "typecheck", command: "pnpm typecheck web" },
+    ],
+  },
   {
     project: "mobile",
     path: "/tmp/mobile/checks.config.json",
-    color: getDefaultProjectColor(1),
+    color: "red",
     checks: [
       { name: "lint", command: "pnpm lint mobile" },
       { name: "test", command: "pnpm test mobile" },
@@ -29,11 +26,20 @@ const sampleProjects = [
   },
 ];
 
+type Summary = { project: string; checks: string[] };
+
 const summarize = (projects: typeof sampleProjects): Summary[] =>
   projects.map((project) => ({
     project: project.project,
     checks: project.checks.map((check) => check.name),
   }));
+
+function assertFiltered(
+  projects: typeof sampleProjects,
+  expected: Summary[],
+): void {
+  assert.deepEqual(summarize(projects), expected);
+}
 
 test("filters by only and exclude options", () => {
   const filters: CheckFilterRule[] = [
@@ -48,7 +54,7 @@ test("filters by only and exclude options", () => {
     {
       project: "web",
       path: "/tmp/web/checks.config.json",
-      color: getDefaultProjectColor(0),
+      color: "red",
       checks: [
         { name: "lint:biome", command: "pnpm lint web" },
         { name: "lint:ast", command: "pnpm lint web --ast" },
@@ -57,7 +63,7 @@ test("filters by only and exclude options", () => {
     {
       project: "mobile",
       path: "/tmp/mobile/checks.config.json",
-      color: getDefaultProjectColor(1),
+      color: "red",
       checks: [{ name: "lint", command: "pnpm lint mobile" }],
     },
   ]);
@@ -72,7 +78,7 @@ test("glob rules match checks and honor last rule wins", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assert.deepEqual(summarize(filtered), [
+  assertFiltered(filtered, [
     { project: "web", checks: ["lint:biome"] },
     { project: "mobile", checks: ["lint"] },
   ]);
@@ -87,7 +93,7 @@ test("single and double stars control depth of matches", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assert.deepEqual(summarize(filtered), [
+  assertFiltered(filtered, [
     { project: "web", checks: ["lint:biome", "lint:ast"] },
     { project: "mobile", checks: ["lint"] },
   ]);
@@ -100,7 +106,7 @@ test("project patterns use the same glob rules", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assert.deepEqual(summarize(filtered), [
+  assertFiltered(filtered, [
     { project: "web", checks: ["lint:biome", "lint:ast", "lint:deep:check"] },
   ]);
 });
