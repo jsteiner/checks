@@ -6,22 +6,22 @@ import type { CheckFilterRule } from "./cli.js";
 const sampleProjects = [
   {
     project: "web",
-    path: "/tmp/web/checks.config.json",
-    color: "red",
+    path: "foo",
     checks: [
-      { name: "lint:biome", command: "pnpm lint web" },
-      { name: "lint:ast", command: "pnpm lint web --ast" },
-      { name: "lint:deep:check", command: "pnpm lint web --deep" },
-      { name: "typecheck", command: "pnpm typecheck web" },
+      { name: "lint", command: "foo" },
+      { name: "lint:biome", command: "foo" },
+      { name: "lint:ast", command: "foo" },
+      { name: "lint:deep:check", command: "foo" },
+      { name: "typecheck", command: "foo" },
     ],
   },
   {
     project: "mobile",
-    path: "/tmp/mobile/checks.config.json",
-    color: "red",
+    path: "foo",
     checks: [
-      { name: "lint", command: "pnpm lint mobile" },
-      { name: "test", command: "pnpm test mobile" },
+      { name: "lint", command: "foo" },
+      { name: "lint:biome", command: "foo" },
+      { name: "test", command: "foo" },
     ],
   },
 ];
@@ -52,9 +52,9 @@ test("filters by check globs", () => {
   assertFiltered(filtered, [
     {
       project: "web",
-      checks: ["lint:biome", "lint:ast", "lint:deep:check"],
+      checks: ["lint", "lint:biome", "lint:ast", "lint:deep:check"],
     },
-    { project: "mobile", checks: ["lint"] },
+    { project: "mobile", checks: ["lint", "lint:biome"] },
   ]);
 });
 
@@ -66,7 +66,7 @@ test("exclude overrides only", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assertFiltered(filtered, [{ project: "mobile", checks: ["lint"] }]);
+  assertFiltered(filtered, [{ project: "mobile", checks: ["lint", "lint:biome"] }]);
 });
 
 test("filters by project globs", () => {
@@ -80,7 +80,7 @@ test("filters by project globs", () => {
   assertFiltered(filtered, [
     {
       project: "web",
-      checks: ["lint:biome", "lint:ast", "lint:deep:check"],
+      checks: ["lint", "lint:biome", "lint:ast", "lint:deep:check"],
     },
     { project: "mobile", checks: ["lint"] },
   ]);
@@ -94,12 +94,15 @@ test("filters by project only glob", () => {
   assertFiltered(filtered, [
     {
       project: "web",
-      checks: [
-        "lint:biome",
-        "lint:ast",
-        "lint:deep:check",
-        "typecheck",
-      ],
+      checks: ["lint", "lint:biome", "lint:ast", "lint:deep:check", "typecheck"],
     },
   ]);
+});
+
+test("preserves other project fields", () => {
+  const filters: CheckFilterRule[] = [{ type: "only", pattern: "web/lint*" }];
+
+  const filtered = filterProjectsByRules(sampleProjects, filters);
+
+  assert.equal(filtered[0]?.path, "foo");
 });
