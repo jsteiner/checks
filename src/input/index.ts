@@ -2,7 +2,11 @@ import type { ProjectDefinition, SuiteDefinition } from "../types.js";
 import { filterProjectsByRules } from "./checkFilters.js";
 import { type CLIOptions, parseCLIOptions } from "./cli.js";
 import { discoverConfigPaths } from "./discoverConfigPaths.js";
-import { FILE_CONFIG_PATH, loadFileConfig } from "./fileConfig.js";
+import {
+  FILE_CONFIG_PATH,
+  FileConfigError,
+  loadFileConfig,
+} from "./fileConfig.js";
 import { resolveProjectColor } from "./projectColors.js";
 
 export interface Input extends SuiteDefinition {
@@ -16,19 +20,53 @@ export async function buildInput(
 ): Promise<Input> {
   const options = parseCLIOptions(argv);
   const paths = await discoverConfigPaths(configPath, options.recursive);
+  const projectsFromConfig: ProjectDefinition[] = await Promise.all(
+    paths.map(async (path, index) => {
+      const config = await loadFileConfig(path);
+      return {
+        ...config,
+        color: resolveProjectColor(config.color, index),
+        path,
+      };
+    }),
+  );
+
+  const totalChecks = projectsFromConfig.reduce(
+    (sum, project) => sum + project.checks.length,
+    0,
+  );
+
   const projects: ProjectDefinition[] = filterProjectsByRules(
-    await Promise.all(
-      paths.map(async (path, index) => {
-        const config = await loadFileConfig(path);
-        return {
-          ...config,
-          color: resolveProjectColor(config.color, index),
-          path,
-        };
-      }),
-    ),
+    projectsFromConfig,
     options.filters,
   );
+
+  const filteredChecks = projects.reduce(
+    (sum, project) => sum + project.checks.length,
+    0,
+  );
+
+  if (filteredChecks === 0) {
+    if (totalChecks === 0) {
+      throw new FileConfigError(
+        `No checks defined in ${paths.length === 1 ? paths[0] : "the discovered config files"}. Add at least one check to run.`,
+      );
+    }
+
+    const filtersDescription =
+      options.filters.length === 0
+        ? ""
+        : ` after applying filters (${options.filters
+            .map(
+              (rule) =>
+                `${rule.type === "only" ? "--only" : "--exclude"} ${rule.pattern}`,
+            )
+            .join(", ")})`;
+
+    throw new FileConfigError(
+      `No checks matched${filtersDescription}. Adjust your patterns or remove filters to run checks.`,
+    );
+  }
 
   return { projects, options };
 }

@@ -36,6 +36,44 @@ test("surfaces invalid glob errors to the user", async () => {
   );
 });
 
+test("notifies when no checks are defined", async () => {
+  const configPath = await createConfigFile({
+    project: "project",
+    checks: [],
+  });
+
+  const errors: string[] = [];
+  const exitCode = await runChecks(configPath, ["node", "checks"], {
+    renderApp: renderStub as unknown as InkRender,
+    createExecutor: () => ({ run: async () => {} }),
+    logError: (message) => errors.push(message),
+  });
+
+  assert.equal(exitCode, EXIT_CODES.orchestratorError);
+  assert.match(errors[0] ?? "", /No checks defined/);
+});
+
+test("notifies when filters exclude all checks", async () => {
+  const configPath = await createConfigFile({
+    project: "project",
+    checks: [{ name: "lint", command: "echo lint" }],
+  });
+
+  const errors: string[] = [];
+  const exitCode = await runChecks(
+    configPath,
+    ["node", "checks", "--only", "missing"],
+    {
+      renderApp: renderStub as unknown as InkRender,
+      createExecutor: () => ({ run: async () => {} }),
+      logError: (message) => errors.push(message),
+    },
+  );
+
+  assert.equal(exitCode, EXIT_CODES.orchestratorError);
+  assert.match(errors[0] ?? "", /No checks matched/);
+});
+
 test("runs checks successfully and exits with success code", async () => {
   const configPath = await createConfigFile({
     project: "project",
