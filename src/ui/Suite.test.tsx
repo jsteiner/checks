@@ -98,3 +98,77 @@ test("shows a status breakdown when any check fails", () => {
   assert.match(frame, /0 aborted/);
   assert.ok(!/all passed/.test(frame));
 });
+
+test("renders multiple projects with sequential check indexes", () => {
+  const checks = [
+    createCheck({
+      status: "passed",
+      startedAt: 0,
+      finishedAt: 10,
+      name: "one",
+      command: "echo one",
+    }),
+    createCheck({
+      status: "passed",
+      startedAt: 0,
+      finishedAt: 20,
+      name: "two",
+      command: "echo two",
+    }),
+    createCheck({
+      status: "passed",
+      startedAt: 0,
+      finishedAt: 30,
+      name: "three",
+      command: "echo three",
+    }),
+  ];
+
+  const [first, second, third] = checks;
+  if (!first || !second || !third) {
+    throw new Error("Expected three checks");
+  }
+
+  const projects: ProjectState[] = [
+    {
+      project: "alpha",
+      path: "/tmp/alpha.json",
+      color: "cyan",
+      checks: [first],
+      summary: {
+        total: 1,
+        passed: 1,
+        failed: 0,
+        aborted: 0,
+        durationMs: 10,
+      },
+      isComplete: true,
+    },
+    {
+      project: "beta",
+      path: "/tmp/beta.json",
+      color: "magenta",
+      checks: [second, third],
+      summary: {
+        total: 2,
+        passed: 2,
+        failed: 0,
+        aborted: 0,
+        durationMs: 30,
+      },
+      isComplete: true,
+    },
+  ];
+
+  const { lastFrame } = render(
+    <LayoutProvider checks={checks}>
+      <Suite projects={projects} />
+    </LayoutProvider>,
+  );
+
+  const frame = stripAnsi(lastFrame() ?? "");
+
+  assert.match(frame, /1\.\s+passed\s+one/);
+  assert.match(frame, /2\.\s+passed\s+two/);
+  assert.match(frame, /3\.\s+passed\s+three/);
+});

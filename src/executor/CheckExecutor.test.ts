@@ -121,6 +121,27 @@ test("records spawn errors and fallback error messages", async () => {
   assert.deepEqual(fallbackFirst.log, [{ text: "Spawn failed\n" }]);
 });
 
+test("captures child error events and marks the check failed", async () => {
+  const spawn = () => {
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => {
+      child.emit("error", new Error("child blew up"));
+    });
+    return child;
+  };
+
+  const { store, status } = await executeCheck(
+    { name: "child-error", command: "noop" },
+    spawn,
+  );
+  const first = store.getCheck(0);
+
+  assert.equal(status, "failed");
+  const result = expectFailed(first.result);
+  assert.equal(result.errorMessage, "child blew up");
+  assert.deepEqual(first.log, [{ text: "child blew up\n" }]);
+});
+
 test("aborts a running check when the abort signal fires", async () => {
   const controller = new AbortController();
   let killed = false;
