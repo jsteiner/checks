@@ -25,7 +25,7 @@ export class FileConfigError extends Error {
   }
 }
 
-export type FileConfig = z.infer<typeof fileConfigSchema>;
+type FileConfig = z.infer<typeof fileConfigSchema>;
 
 export async function loadFileConfig(configPath: string): Promise<FileConfig> {
   let contents: string;

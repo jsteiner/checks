@@ -70,5 +70,3 @@ export class Suite {
     };
   }
 }
-
-export type { ProjectState, SuiteState } from "../types.js";

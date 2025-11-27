@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import type { render } from "ink-testing-library";
 
-export type InkInstance = ReturnType<typeof render>;
+type InkInstance = ReturnType<typeof render>;
 
 export async function tick() {
   await new Promise<void>((resolve) => setImmediate(resolve));

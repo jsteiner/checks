@@ -53,9 +53,6 @@ export class Executor {
   }
 }
 
-export type { SpawnedProcess, SpawnFunction } from "./PtyProcess.js";
-export { createDefaultSpawner } from "./PtyProcess.js";
-
 function forwardAbortSignal(
   source: AbortSignal,
   target: AbortController,

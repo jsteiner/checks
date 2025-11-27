@@ -34,7 +34,7 @@ type ProcessLike = {
   stdout: StdoutLike;
 };
 
-export type PtyProcessOptions = {
+type PtyProcessOptions = {
   process?: ProcessLike;
   spawn?: typeof spawnPty;
 };

@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { SpawnedProcess } from "../../executor/PtyProcess.js";
 
-export type FakeSpawnedProcess = SpawnedProcess & {
+type FakeSpawnedProcess = SpawnedProcess & {
   emitClose: (code: number | null, signal: NodeJS.Signals | null) => void;
 };
 

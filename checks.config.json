@@ -3,6 +3,7 @@
 	"checks": [
 		{ "name": "typecheck", "command": "pnpm typecheck" },
 		{ "name": "test", "command": "pnpm test" },
-		{ "name": "lint:biome", "command": "pnpm lint:biome" }
+		{ "name": "lint:biome", "command": "pnpm lint:biome" },
+		{ "name": "lint:unused", "command": "pnpm lint:unused" }
 	]
 }
