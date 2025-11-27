@@ -16,7 +16,7 @@ export type SpawnedProcess = EventEmitter & {
   stdout?: NodeJS.ReadableStream | null | undefined;
 };
 
-export type SpawnFunction = (command: string) => SpawnedProcess;
+export type SpawnFunction = (command: string, cwd?: string) => SpawnedProcess;
 
 type StdoutLike = {
   columns?: number;
@@ -62,7 +62,7 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
     this._spawn = options.spawn ?? spawnPty;
   }
 
-  spawn(command: string): this {
+  spawn(command: string, cwd?: string): this {
     if (this.pty) {
       throw new Error("Process already spawned.");
     }
@@ -71,7 +71,7 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
       file,
       args,
       options: ptyOptions,
-    } = this.buildPtySpawnOptions(command);
+    } = this.buildPtySpawnOptions(command, cwd);
 
     const pty = this._spawn(file, args, ptyOptions);
     this.pty = pty;
@@ -121,7 +121,10 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
     this.pty = null;
   }
 
-  private buildPtySpawnOptions(command: string): {
+  private buildPtySpawnOptions(
+    command: string,
+    cwd?: string,
+  ): {
     file: string;
     args: string[];
     options: IPtyForkOptions;
@@ -131,7 +134,7 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
     const options: IPtyForkOptions = {
       cols: columns,
       rows,
-      cwd: this._process.cwd(),
+      cwd: cwd ?? this._process.cwd(),
       env: this._process.env,
     };
 
@@ -183,5 +186,6 @@ const SIGNALS_BY_CODE = Object.entries(os.constants.signals).reduce(
 export function createDefaultSpawner(
   process: ProcessLike = nodeProcess,
 ): SpawnFunction {
-  return (command: string) => new PtyProcess({ process }).spawn(command);
+  return (command: string, cwd?: string) =>
+    new PtyProcess({ process }).spawn(command, cwd);
 }

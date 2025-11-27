@@ -109,3 +109,25 @@ test("stops immediately when the parent signal is already aborted", async () => 
   assert.equal(spawnCalled, false);
   assert.equal(first.result.status, "aborted");
 });
+
+test("runs checks from their configured working directory", async () => {
+  const cwd = "/tmp/child-project";
+  const started: Array<{ command: string; cwd: string | undefined }> = [];
+
+  const spawn: SpawnFunction = (command, workingDir) => {
+    started.push({ command, cwd: workingDir });
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => child.emitClose(0, null));
+    return child;
+  };
+
+  const { store } = await executeChecks(
+    [{ name: "run-me", command: "echo ok", cwd }],
+    {},
+    spawn,
+  );
+
+  const first = store.getCheck(0, 0);
+  assert.equal(first.result.status, "passed");
+  assert.deepEqual(started, [{ command: "echo ok", cwd }]);
+});

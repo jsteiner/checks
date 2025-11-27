@@ -3,6 +3,7 @@ import type { ProjectColor } from "./input/projectColors.js";
 export interface CheckDefinition {
   name: string;
   command: string;
+  cwd?: string;
 }
 
 export interface ProjectDefinition {

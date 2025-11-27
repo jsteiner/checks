@@ -12,6 +12,7 @@ const TERMINAL_STATUSES: CheckStatus[] = ["passed", "failed", "aborted"];
 export class Check {
   readonly name: string;
   readonly command: string;
+  readonly cwd: string | undefined;
   readonly startedAt: number;
 
   private _result: CheckResult = { status: "running" };
@@ -25,6 +26,7 @@ export class Check {
   ) {
     this.name = definition.name;
     this.command = definition.command;
+    this.cwd = definition.cwd;
     this.startedAt = startedAt;
     this.onUpdate = onUpdate;
   }
@@ -92,13 +94,19 @@ export class Check {
   }
 
   toState(): CheckState {
-    return {
+    const state: CheckState = {
       name: this.name,
       command: this.command,
       startedAt: this.startedAt,
       log: this.cloneLog(),
       result: this.cloneResult(),
     };
+
+    if (this.cwd) {
+      state.cwd = this.cwd;
+    }
+
+    return state;
   }
 
   summary(): Summary {

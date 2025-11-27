@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { ProjectDefinition, SuiteDefinition } from "../types.js";
 import { filterProjectsByRules } from "./checkFilters.js";
 import { type CLIOptions, parseCLIOptions } from "./cli.js";
@@ -21,12 +22,17 @@ export async function buildInput(
   const options = parseCLIOptions(argv);
   const paths = await discoverConfigPaths(configPath, options.recursive);
   const projectsFromConfig: ProjectDefinition[] = await Promise.all(
-    paths.map(async (path, index) => {
-      const config = await loadFileConfig(path);
+    paths.map(async (configFilePath, index) => {
+      const config = await loadFileConfig(configFilePath);
+      const cwd = path.dirname(configFilePath);
       return {
         ...config,
         color: resolveProjectColor(config.color, index),
-        path,
+        path: configFilePath,
+        checks: config.checks.map((check) => ({
+          ...check,
+          cwd,
+        })),
       };
     }),
   );

@@ -21,6 +21,8 @@ test("builds config and CLI options", async () => {
     "--interactive",
   ]);
 
+  const cwd = path.dirname(configPath);
+
   assert.equal(input.options.interactive, true);
   assert.equal(input.options.failFast, false);
   assert.equal(input.options.recursive, false);
@@ -28,8 +30,8 @@ test("builds config and CLI options", async () => {
   assert.equal(input.projects[0]?.project, "project");
   assert.equal(input.projects[0]?.path, configPath);
   assert.deepEqual(input.projects[0]?.checks, [
-    { name: "lint", command: "pnpm lint" },
-    { name: "test", command: "pnpm test" },
+    { name: "lint", command: "pnpm lint", cwd },
+    { name: "test", command: "pnpm test", cwd },
   ]);
 });
 
@@ -67,9 +69,11 @@ test("recursively discovers configs when requested", async () => {
 
   const names = input.projects.map((config) => config.project);
   const paths = input.projects.map((config) => config.path);
+  const workingDirs = input.projects.map((config) => config.checks[0]?.cwd);
 
   assert.deepEqual(names, ["root", "nested"]);
   assert.deepEqual(paths, [rootConfigPath, nestedConfigPath]);
+  assert.deepEqual(workingDirs, [baseDir, nestedDir]);
 });
 
 test("throws when recursive search finds no configs", async () => {
