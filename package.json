@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "lint:biome": "biome check --write --error-on-warnings",
     "test": "tsx scripts/run-tests.ts",
-    "checks": "pnpm build; node dist/index.js"
+    "checks": "pnpm build; node dist/index.js",
+    "prepare": "pnpm build"
   },
   "keywords": [],
   "author": "",
