@@ -1,3 +1,4 @@
+import { sanitizeOutput } from "../executor/sanitization.js";
 import type {
   CheckDefinition,
   CheckResult,
@@ -53,9 +54,9 @@ export class Check {
   }
 
   appendStdout(chunk: Buffer | string): boolean {
-    const next = chunk.toString();
-    if (!next) return false;
-    this._log.push({ text: next });
+    const sanitized = sanitizeOutput(chunk.toString());
+    if (!sanitized) return false;
+    this._log.push({ text: sanitized });
     this.onUpdate();
     return true;
   }

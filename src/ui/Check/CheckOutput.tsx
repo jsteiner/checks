@@ -12,9 +12,7 @@ export function CheckOutput({ check, showOutput }: CheckOutputProps) {
   }
 
   const combined = check.log.map((entry: LogEntry) => entry.text).join("");
-  const rawLines = combined
-    .split("\n")
-    .map((line: string) => line.replace(/\r/g, ""));
+  const rawLines = combined.split("\n");
   const lines = rawLines.length === 1 && rawLines[0] === "" ? [] : rawLines;
   const emptyMessage = "No output";
   let lineKeyCounter = 0;
