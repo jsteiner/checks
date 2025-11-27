@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
+import { realpathSync } from "node:fs";
+import path from "node:path";
 import process from "node:process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { render } from "ink";
 import React from "react";
 import { Executor } from "./executor/index.js";
@@ -120,6 +122,22 @@ function exitWithNewline(exitCode: number) {
   process.exit(exitCode);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+const isExecutedDirectly = (() => {
+  const argvPath = process.argv[1];
+  if (!argvPath) return true;
+  const argvReal = safeRealpath(argvPath);
+  const entryReal = safeRealpath(fileURLToPath(import.meta.url));
+  return argvReal !== null && entryReal !== null && argvReal === entryReal;
+})();
+
+if (isExecutedDirectly) {
   void main();
+}
+
+function safeRealpath(p: string): string | null {
+  try {
+    return realpathSync(path.resolve(p));
+  } catch {
+    return null;
+  }
 }
