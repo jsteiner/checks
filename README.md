@@ -4,7 +4,7 @@ Run tests and static analysis in parallel with focused, token efficient, output.
 
 ## Configuration
 
-`checks` looks for `checks.config.json` in the current working directory. When `--recursive` is set it searches subdirectories recursively, and each project's commands run from the directory where its config file lives so relative scripts keep working.
+`checks` looks for `checks.config.json` in the current working directory. When `--recursive` is set it searches subdirectories recursively, and each project's commands run from the directory where its config file lives.
 
 Example `checks.config.json`:
 
