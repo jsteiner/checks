@@ -4,7 +4,6 @@ const coverageExcludes = "src/**/*.{test.ts,test.tsx}";
 
 const args = [
   "--test",
-  "--test-reporter=dot",
   "--experimental-test-coverage",
   "--test-coverage-lines=95",
   "--test-coverage-branches=95",
