@@ -15,7 +15,8 @@ You have access to the following `pnpm` scripts:
 
 # Workflow
 
-- You MUST get all checks in `pnpm checks` passing before considering yourself finished with your work.
+- When you are done implementing changes, you MUST run `pnpm checks` and fix any errors until all checks pass.
+- Do NOT loosen restrictions in any checks (e.g. lower coverage thresholds or disable rules in config) to get checks passing.
 
 # Architecture
 
