@@ -36,6 +36,5 @@ export async function waitForFrameMatch(
 }
 
 export function stripAnsi(value: string): string {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: needed to strip ANSI color codes
   return value.replace(/\u001B\[[0-9;]*m/g, "");
 }

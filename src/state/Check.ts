@@ -1,10 +1,8 @@
-import { sanitizeOutput } from "../executor/sanitization.js";
 import type {
   CheckDefinition,
   CheckResult,
   CheckState,
   CheckStatus,
-  LogEntry,
   Summary,
 } from "../types.js";
 
@@ -13,11 +11,11 @@ const TERMINAL_STATUSES: CheckStatus[] = ["passed", "failed", "aborted"];
 export class Check {
   readonly name: string;
   readonly command: string;
-  readonly cwd: string | undefined;
+  readonly cwd: string;
   readonly startedAt: number;
 
   private _result: CheckResult = { status: "running" };
-  private _log: LogEntry[] = [];
+  private _output = "";
   private readonly onUpdate: () => void;
 
   constructor(
@@ -40,8 +38,8 @@ export class Check {
     return this.cloneResult();
   }
 
-  get log(): LogEntry[] {
-    return this.cloneLog();
+  get output(): string {
+    return this._output;
   }
 
   get finishedAt(): number | null {
@@ -53,10 +51,9 @@ export class Check {
     return this.isTerminal();
   }
 
-  appendStdout(chunk: Buffer | string): boolean {
-    const sanitized = sanitizeOutput(chunk.toString());
-    if (!sanitized) return false;
-    this._log.push({ text: sanitized });
+  setOutput(text: string): boolean {
+    if (this._output === text) return false;
+    this._output = text;
     this.onUpdate();
     return true;
   }
@@ -95,19 +92,14 @@ export class Check {
   }
 
   toState(): CheckState {
-    const state: CheckState = {
+    return {
       name: this.name,
       command: this.command,
+      cwd: this.cwd,
       startedAt: this.startedAt,
-      log: this.cloneLog(),
+      output: this.output,
       result: this.cloneResult(),
     };
-
-    if (this.cwd) {
-      state.cwd = this.cwd;
-    }
-
-    return state;
   }
 
   summary(): Summary {
@@ -128,9 +120,5 @@ export class Check {
 
   private cloneResult(): CheckResult {
     return structuredClone(this._result);
-  }
-
-  private cloneLog(): LogEntry[] {
-    return this._log.map((entry) => ({ ...entry }));
   }
 }

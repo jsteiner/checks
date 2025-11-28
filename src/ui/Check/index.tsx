@@ -1,6 +1,7 @@
 import { Box } from "ink";
 import type { ProjectColor } from "../../input/projectColors.js";
 import type { CheckState } from "../../types.js";
+import { CHECK_INSET } from "../layout.js";
 import { CheckOutput } from "./CheckOutput.js";
 import { CheckSummary } from "./CheckSummary.js";
 
@@ -19,7 +20,7 @@ export function Check({ color, check, showOutput, index }: CheckProps) {
       flexDirection="column"
       borderStyle="round"
       borderColor={color}
-      paddingX={1}
+      paddingX={CHECK_INSET}
       gap={1}
     >
       <CheckOutput check={check} showOutput={showOutput} />

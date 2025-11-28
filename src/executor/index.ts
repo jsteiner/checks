@@ -1,6 +1,6 @@
 import type { Input } from "../input/index.js";
 import type { Suite } from "../state/Suite.js";
-import type { CheckStatus } from "../types.js";
+import type { CheckStatus, TerminalDimensions } from "../types.js";
 import { CheckExecutor } from "./CheckExecutor.js";
 import { createDefaultSpawner, type SpawnFunction } from "./PtyProcess.js";
 
@@ -14,6 +14,7 @@ export class Executor {
     private readonly input: Input,
     private readonly store: Suite,
     parentSignal: AbortSignal,
+    private readonly terminalDimensions: TerminalDimensions,
     spawnFn: SpawnFunction = createDefaultSpawner(),
   ) {
     this.spawnFn = spawnFn;
@@ -48,7 +49,11 @@ export class Executor {
     checkIndex: number,
   ): Promise<CheckStatus> {
     const check = this.store.getCheck(projectIndex, checkIndex);
-    const runner = new CheckExecutor(this.signal, this.spawnFn);
+    const runner = new CheckExecutor(
+      this.signal,
+      this.terminalDimensions,
+      this.spawnFn,
+    );
     return runner.run(check);
   }
 }

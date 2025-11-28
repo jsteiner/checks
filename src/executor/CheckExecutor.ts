@@ -1,5 +1,6 @@
 import type { Check } from "../state/Check.js";
-import type { CheckStatus } from "../types.js";
+import type { CheckStatus, TerminalDimensions } from "../types.js";
+import { OutputManager } from "./OutputManager.js";
 import type { SpawnedProcess, SpawnFunction } from "./PtyProcess.js";
 
 export class CheckExecutor {
@@ -8,6 +9,7 @@ export class CheckExecutor {
 
   constructor(
     private readonly signal: AbortSignal,
+    private readonly terminalDimensions: TerminalDimensions,
     private readonly spawnFn: SpawnFunction,
   ) {}
 
@@ -16,6 +18,8 @@ export class CheckExecutor {
       check.markAborted();
       return Promise.resolve("aborted");
     }
+
+    const outputManager = new OutputManager(this.terminalDimensions);
 
     return new Promise((resolve) => {
       const onAbort = () => {
@@ -28,25 +32,38 @@ export class CheckExecutor {
 
       const cleanup = () => {
         this.signal.removeEventListener("abort", onAbort);
+        outputManager.dispose();
+      };
+
+      const onResize = (columns: number, rows: number) => {
+        const newOutput = outputManager.resize(columns, rows);
+        if (newOutput) {
+          check.setOutput(newOutput);
+        }
       };
 
       try {
-        this.child = this.spawnFn(check.command, check.cwd);
+        this.child = this.spawnFn(check.command, check.cwd, onResize);
       } catch (error) {
         cleanup();
         const message = error instanceof Error ? error.message : "Spawn failed";
-        check.appendStdout(`${message}\n`);
         check.markFailed(null, message);
         resolve("failed");
         return;
       }
 
-      this.child.stdout?.on("data", (chunk: Buffer) => {
-        check.appendStdout(chunk);
+      this.child.stdout?.on("data", async (chunk: Buffer) => {
+        const newOutput = await outputManager.appendChunk(chunk);
+        if (newOutput) {
+          check.setOutput(newOutput);
+        }
       });
 
-      this.child.on("error", (error) => {
-        check.appendStdout(`${error.message}\n`);
+      this.child.on("error", async (error) => {
+        const newOutput = await outputManager.appendChunk(`${error.message}\n`);
+        if (newOutput) {
+          check.setOutput(newOutput);
+        }
         check.markFailed(null, error.message);
         cleanup();
         resolve("failed");

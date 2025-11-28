@@ -6,6 +6,7 @@ import { Executor } from "./executor/index.js";
 import type { Input } from "./input/index.js";
 import { getDefaultProjectColor } from "./input/projectColors.js";
 import { Suite } from "./state/Suite.js";
+import { DEFAULT_TEST_DIMENSIONS } from "./test/helpers/terminal.js";
 import { stripAnsi } from "./test/helpers/ui.js";
 import { App } from "./ui/App.js";
 
@@ -14,10 +15,12 @@ test("runs commands in parallel and renders updates", async () => {
     {
       name: "fast",
       command: `${process.execPath} -e "console.log('alpha')"`,
+      cwd: process.cwd(),
     },
     {
       name: "slow-fail",
       command: `${process.execPath} -e "setTimeout(() => { console.error('bravo'); process.exit(1); }, 25)"`,
+      cwd: process.cwd(),
     },
   ];
 
@@ -48,7 +51,12 @@ test("runs commands in parallel and renders updates", async () => {
     />,
   );
 
-  const runPromise = new Executor(input, store, controller.signal).run();
+  const runPromise = new Executor(
+    input,
+    store,
+    controller.signal,
+    DEFAULT_TEST_DIMENSIONS,
+  ).run();
   await delay(5);
 
   const inProgressFrame = ink.lastFrame() ?? "";

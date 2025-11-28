@@ -8,6 +8,11 @@ import {
   type IPtyForkOptions,
   spawn as spawnPty,
 } from "node-pty";
+import {
+  calculatePtyColumns,
+  getPtyDimensions,
+  getTerminalDimensions,
+} from "./terminalConfig.js";
 
 export type SpawnedProcess = EventEmitter & {
   pid?: number | null | undefined;
@@ -16,7 +21,11 @@ export type SpawnedProcess = EventEmitter & {
   stdout?: NodeJS.ReadableStream | null | undefined;
 };
 
-export type SpawnFunction = (command: string, cwd?: string) => SpawnedProcess;
+export type SpawnFunction = (
+  command: string,
+  cwd: string,
+  onResize?: (columns: number, rows: number) => void,
+) => SpawnedProcess;
 
 type StdoutLike = {
   columns?: number;
@@ -37,10 +46,8 @@ type ProcessLike = {
 type PtyProcessOptions = {
   process?: ProcessLike;
   spawn?: typeof spawnPty;
+  onResize?: (columns: number, rows: number) => void;
 };
-
-const DEFAULT_COLUMNS = 80;
-const DEFAULT_ROWS = 24;
 
 export class PtyProcess extends EventEmitter implements SpawnedProcess {
   pid?: number;
@@ -50,6 +57,9 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
 
   private readonly _process: ProcessLike;
   private readonly _spawn: typeof spawnPty;
+  private readonly onResizeCallback:
+    | ((columns: number, rows: number) => void)
+    | undefined;
 
   private pty: IPty | null = null;
   private disposeResize: () => void = () => {};
@@ -60,9 +70,10 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
     super();
     this._process = options.process ?? nodeProcess;
     this._spawn = options.spawn ?? spawnPty;
+    this.onResizeCallback = options.onResize;
   }
 
-  spawn(command: string, cwd?: string): this {
+  spawn(command: string, cwd: string): this {
     if (this.pty) {
       throw new Error("Process already spawned.");
     }
@@ -123,7 +134,7 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
 
   private buildPtySpawnOptions(
     command: string,
-    cwd?: string,
+    cwd: string,
   ): {
     file: string;
     args: string[];
@@ -134,7 +145,7 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
     const options: IPtyForkOptions = {
       cols: columns,
       rows,
-      cwd: cwd ?? this._process.cwd(),
+      cwd,
       env: this._process.env,
     };
 
@@ -147,24 +158,38 @@ export class PtyProcess extends EventEmitter implements SpawnedProcess {
   }
 
   private getTerminalSize() {
-    const { stdout } = this._process;
-    return {
-      columns: stdout?.columns ?? DEFAULT_COLUMNS,
-      rows: stdout?.rows ?? DEFAULT_ROWS,
-    };
+    const terminalDims = getTerminalDimensions(this._process);
+    return getPtyDimensions(terminalDims);
   }
 
   private installResizeSync(pty: IPty): () => void {
     const stdout = this._process.stdout;
     if (!stdout?.isTTY) return () => {};
 
+    let resizeTimer: NodeJS.Timeout | null = null;
+    const DEBOUNCE_MS = 100;
+
     const onResize = () => {
-      const { columns, rows } = this.getTerminalSize();
-      pty.resize(columns, rows);
+      if (resizeTimer) clearTimeout(resizeTimer);
+
+      resizeTimer = setTimeout(() => {
+        const terminalDims = getTerminalDimensions(this._process);
+        const ptyDims = getPtyDimensions(terminalDims);
+
+        pty.resize(ptyDims.columns, ptyDims.rows);
+
+        if (this.onResizeCallback) {
+          const bufferColumns = calculatePtyColumns(terminalDims.columns);
+          this.onResizeCallback(bufferColumns, terminalDims.rows);
+        }
+
+        resizeTimer = null;
+      }, DEBOUNCE_MS);
     };
 
     stdout.on("resize", onResize);
     return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
       stdout.off("resize", onResize);
     };
   }
@@ -186,6 +211,11 @@ const SIGNALS_BY_CODE = Object.entries(os.constants.signals).reduce(
 export function createDefaultSpawner(
   process: ProcessLike = nodeProcess,
 ): SpawnFunction {
-  return (command: string, cwd?: string) =>
-    new PtyProcess({ process }).spawn(command, cwd);
+  return (command: string, cwd: string, onResize?) => {
+    const options: PtyProcessOptions = { process };
+    if (onResize !== undefined) {
+      options.onResize = onResize;
+    }
+    return new PtyProcess(options).spawn(command, cwd);
+  };
 }

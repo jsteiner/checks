@@ -2,13 +2,14 @@ import type { CheckResult, CheckState } from "../../types.js";
 
 interface CreateCheckOptions {
   status: CheckResult["status"];
-  log?: CheckState["log"];
+  output?: string;
   startedAt?: number;
   finishedAt?: number;
   exitCode?: number | null;
   errorMessage?: string | null;
   name?: string;
   command?: string;
+  cwd?: string;
 }
 
 export function createCheck({
@@ -19,7 +20,8 @@ export function createCheck({
   errorMessage = null,
   name = "demo",
   command = "echo hi",
-  log = [],
+  cwd = "/tmp/project",
+  output = "",
 }: CreateCheckOptions): CheckState {
   const result: CheckResult =
     status === "running"
@@ -42,8 +44,9 @@ export function createCheck({
   return {
     name,
     command,
+    cwd,
     startedAt,
-    log,
+    output,
     result,
   };
 }

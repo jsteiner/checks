@@ -114,7 +114,7 @@ test("spawns with provided env and process settings", async () => {
     stdout: Object.assign(new EventEmitter(), {
       columns: 120,
       rows: 40,
-      isTTY: false,
+      isTTY: true,
     }),
   });
   const fakePty = createFakePty(999);
@@ -123,7 +123,7 @@ test("spawns with provided env and process settings", async () => {
     assert.equal(file, "/bin/zsh");
     assert.deepEqual(args, ["-c", "echo hi"]);
     assert.deepEqual(options, {
-      cols: 120,
+      cols: 116,
       rows: 40,
       cwd: "/custom/cwd",
       env,
@@ -133,6 +133,7 @@ test("spawns with provided env and process settings", async () => {
 
   const child = new PtyProcess({ process: processStub, spawn }).spawn(
     "echo hi",
+    "/custom/cwd",
   );
 
   let output = "";
@@ -168,7 +169,7 @@ test("uses shell env var for spawn", () => {
     return fakePty;
   });
 
-  new PtyProcess({ process: processStub, spawn }).spawn("dir");
+  new PtyProcess({ process: processStub, spawn }).spawn("dir", "/tmp/project");
   assert.equal(spawn.mock.callCount(), 1);
 });
 
@@ -185,7 +186,7 @@ test("kills the process group when possible and records the signal", async () =>
   const child = new PtyProcess({
     process: processStub,
     spawn: () => fakePty,
-  }).spawn("noop");
+  }).spawn("noop", "/tmp/project");
 
   const closeEventPromise = new Promise<{
     code: number | null;
@@ -212,7 +213,7 @@ test("falls back to PTY kill when group kill fails", async () => {
   const child = new PtyProcess({
     process: processStub,
     spawn: () => fakePty,
-  }).spawn("noop");
+  }).spawn("noop", "/tmp/project");
 
   child.kill("SIGKILL");
   fakePty.emitExit(0, null);
@@ -221,10 +222,13 @@ test("falls back to PTY kill when group kill fails", async () => {
 });
 
 test("throws when spawning twice", () => {
-  const child = new PtyProcess({ spawn: () => createFakePty() }).spawn("noop");
+  const child = new PtyProcess({ spawn: () => createFakePty() }).spawn(
+    "noop",
+    "/tmp/project",
+  );
 
   assert.throws(() => {
-    child.spawn("noop");
+    child.spawn("noop", "/tmp/project");
   }, /already spawned/i);
 });
 
@@ -235,7 +239,7 @@ test("throws when killing before spawn", () => {
   }, /not been spawned/i);
 });
 
-test("syncs PTY size with stdout when resize events occur", () => {
+test("syncs PTY size with stdout when resize events occur", async () => {
   const stdout = Object.assign(new EventEmitter(), {
     isTTY: true,
     columns: 10,
@@ -243,11 +247,93 @@ test("syncs PTY size with stdout when resize events occur", () => {
   });
   const processStub = createProcessStub({ stdout });
   const fakePty = createFakePty();
-  new PtyProcess({ process: processStub, spawn: () => fakePty }).spawn("noop");
+  new PtyProcess({ process: processStub, spawn: () => fakePty }).spawn(
+    "noop",
+    "/tmp/project",
+  );
 
   stdout.columns = 20;
   stdout.rows = 7;
   stdout.emit("resize");
 
-  assert.deepEqual(fakePty.resizeCalls, [{ cols: 20, rows: 7 }]);
+  // Wait for the debounce timer (100ms) to complete
+  await new Promise((resolve) => setTimeout(resolve, 150));
+
+  assert.deepEqual(fakePty.resizeCalls, [{ cols: 80, rows: 7 }]);
+});
+
+test("kills PTY directly when pid is missing", async () => {
+  const fakePty = createFakePty(undefined);
+  const child = new PtyProcess({ spawn: () => fakePty }).spawn(
+    "noop",
+    "/tmp/project",
+  );
+
+  child.kill("SIGTERM");
+  fakePty.emitExit(0, null);
+
+  assert.deepEqual(fakePty.killCalls, ["SIGTERM"]);
+});
+
+test("handles null exitCode in close event", async () => {
+  const fakePty = createFakePty();
+  const child = new PtyProcess({ spawn: () => fakePty }).spawn(
+    "noop",
+    "/tmp/project",
+  );
+
+  const closeEventPromise = new Promise<{
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }>((resolve) => {
+    child.on("close", (code, signal) => resolve({ code, signal }));
+  });
+
+  fakePty.emitExit(null, null);
+
+  const closeEvent = await closeEventPromise;
+  assert.strictEqual(closeEvent.code, null);
+  assert.strictEqual(closeEvent.signal, null);
+});
+
+test("handles exit with signal code", async () => {
+  const fakePty = createFakePty();
+  const child = new PtyProcess({ spawn: () => fakePty }).spawn(
+    "noop",
+    "/tmp/project",
+  );
+
+  const closeEventPromise = new Promise<{
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }>((resolve) => {
+    child.on("close", (code, signal) => resolve({ code, signal }));
+  });
+
+  fakePty.emitExit(null, 15);
+
+  const closeEvent = await closeEventPromise;
+  assert.strictEqual(closeEvent.code, null);
+  assert.strictEqual(closeEvent.signal, "SIGTERM");
+});
+
+test("handles exit with undefined exitCode and signal", async () => {
+  const fakePty = createFakePty();
+  const child = new PtyProcess({ spawn: () => fakePty }).spawn(
+    "noop",
+    "/tmp/project",
+  );
+
+  const closeEventPromise = new Promise<{
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }>((resolve) => {
+    child.on("close", (code, signal) => resolve({ code, signal }));
+  });
+
+  fakePty.emitExit(undefined, undefined);
+
+  const closeEvent = await closeEventPromise;
+  assert.strictEqual(closeEvent.code, null);
+  assert.strictEqual(closeEvent.signal, null);
 });

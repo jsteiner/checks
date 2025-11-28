@@ -10,8 +10,9 @@ import { CheckSummary } from "./CheckSummary.js";
 const BASE_CHECK: Omit<CheckState, "result"> = {
   name: "demo",
   command: "echo hi",
+  cwd: "/tmp/project",
   startedAt: 1_000,
-  log: [],
+  output: "",
 };
 
 test("shows duration to the right of the command after completion", () => {

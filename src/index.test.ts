@@ -150,6 +150,30 @@ test("exits with aborted code when receiving SIGINT", async () => {
   assert.equal(exitCode, EXIT_CODES.aborted);
 });
 
+test("exits with aborted code when signal is aborted but checks are not marked aborted", async () => {
+  const configPath = await createConfigFile({
+    project: "project",
+    checks: [{ name: "test", command: "echo test" }],
+  });
+
+  const renderWithAbort: InkRender = (element) => {
+    const props = (element as ReactElement<{ onAbort: () => void }>).props;
+    props.onAbort();
+    return renderStub() as never;
+  };
+
+  const exitCode = await runChecks(configPath, ["node", "checks"], {
+    renderApp: renderWithAbort,
+    createExecutor: (_input, store) => ({
+      run: async () => {
+        store.getCheck(0, 0).markPassed(0);
+      },
+    }),
+  });
+
+  assert.equal(exitCode, EXIT_CODES.aborted);
+});
+
 test("logs runtime errors and exits with orchestrator error", async () => {
   const configPath = await createConfigFile({
     project: "project",
@@ -196,4 +220,41 @@ test("returns failed exit code when any check fails even if others pass", async 
   });
 
   assert.equal(exitCode, EXIT_CODES.checksFailed);
+});
+
+test("handles non-Error exceptions during runtime", async () => {
+  const configPath = await createConfigFile({
+    project: "project",
+    checks: [{ name: "lint", command: "echo ok" }],
+  });
+
+  const errors: string[] = [];
+  const exitCode = await runChecks(configPath, ["node", "checks"], {
+    renderApp: renderStub as unknown as InkRender,
+    createExecutor: () => ({
+      run: async () => {
+        throw "string error";
+      },
+    }),
+    logError: (message) => errors.push(message),
+  });
+
+  assert.equal(exitCode, EXIT_CODES.orchestratorError);
+  assert.match(errors[0] ?? "", /Unexpected runtime error/);
+});
+
+test("handles non-Error exceptions during config loading", async () => {
+  const errors: string[] = [];
+  const exitCode = await runChecks(
+    "/non/existent/path.json",
+    ["node", "checks"],
+    {
+      renderApp: renderStub as unknown as InkRender,
+      createExecutor: () => ({ run: async () => {} }),
+      logError: (message) => errors.push(message),
+    },
+  );
+
+  assert.equal(exitCode, EXIT_CODES.orchestratorError);
+  assert.ok(errors.length > 0);
 });

@@ -4,6 +4,7 @@ import type { Input } from "../input/index.js";
 import { getDefaultProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
+import { DEFAULT_TEST_DIMENSIONS } from "../test/helpers/terminal.js";
 import { Executor } from "./index.js";
 import { createDefaultSpawner, type SpawnFunction } from "./PtyProcess.js";
 
@@ -31,7 +32,13 @@ async function executeChecks(
     },
   };
 
-  const executor = new Executor(input, store, controller.signal, spawn);
+  const executor = new Executor(
+    input,
+    store,
+    controller.signal,
+    DEFAULT_TEST_DIMENSIONS,
+    spawn,
+  );
   await executor.run();
 
   return { controller, input, store, executor };
@@ -39,8 +46,8 @@ async function executeChecks(
 
 test("aborts other running checks after the first failure when fail-fast is enabled", async () => {
   const checks: Input["projects"][number]["checks"] = [
-    { name: "fail", command: "fail" },
-    { name: "skip", command: "skip" },
+    { name: "fail", command: "fail", cwd: "/tmp/project" },
+    { name: "skip", command: "skip", cwd: "/tmp/project" },
   ];
   const started: string[] = [];
   const killed: Record<string, boolean> = {};
@@ -75,7 +82,7 @@ test("uses provided spawn function when supplied", async () => {
   let spawnCalled = false;
 
   const { store } = await executeChecks(
-    [{ name: "pty-info", command }],
+    [{ name: "pty-info", command, cwd: "/tmp/project" }],
     {},
     () => {
       spawnCalled = true;
@@ -96,7 +103,7 @@ test("stops immediately when the parent signal is already aborted", async () => 
   let spawnCalled = false;
 
   const { store } = await executeChecks(
-    [{ name: "skipped", command: "noop" }],
+    [{ name: "skipped", command: "noop", cwd: "/tmp/project" }],
     {},
     () => {
       spawnCalled = true;

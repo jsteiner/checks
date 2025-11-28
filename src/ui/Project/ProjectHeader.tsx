@@ -1,9 +1,10 @@
 import { Box, Spacer, Text } from "ink";
 import type { ProjectState } from "../../types.js";
 import { formatDuration } from "../display.js";
+import { CHECK_SIDE_OVERHEAD } from "../layout.js";
 import { STATUS_COLORS, STATUS_LABELS } from "../status.js";
 
-const HEADER_PADDING = 2;
+const HEADER_PADDING = CHECK_SIDE_OVERHEAD;
 
 interface ProjectHeaderProps {
   project: ProjectState;

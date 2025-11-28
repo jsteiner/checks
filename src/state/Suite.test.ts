@@ -10,15 +10,15 @@ const PROJECTS = [
     path: "/tmp/alpha.json",
     color: getDefaultProjectColor(0),
     checks: [
-      { name: "a", command: "echo a" },
-      { name: "b", command: "echo b" },
+      { name: "a", command: "echo a", cwd: "/tmp/project" },
+      { name: "b", command: "echo b", cwd: "/tmp/project" },
     ],
   },
   {
     project: "beta",
     path: "/tmp/beta.json",
     color: getDefaultProjectColor(1),
-    checks: [{ name: "c", command: "echo c" }],
+    checks: [{ name: "c", command: "echo c", cwd: "/tmp/project" }],
   },
 ];
 
@@ -33,7 +33,7 @@ test("snapshot returns current state as plain objects", () => {
       checks: project.checks.map((check) => ({
         ...check,
         startedAt: 0,
-        log: [],
+        output: "",
         result: { status: "running" },
       })),
       summary: {

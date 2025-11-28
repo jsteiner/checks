@@ -12,8 +12,8 @@ import {
 import { App } from "./App.js";
 
 const SAMPLE_CHECKS = [
-  { name: "first", command: "echo first" },
-  { name: "second", command: "echo second" },
+  { name: "first", command: "echo first", cwd: "/tmp/project" },
+  { name: "second", command: "echo second", cwd: "/tmp/project" },
 ];
 const SAMPLE_PROJECT = {
   project: "sample",
@@ -58,8 +58,8 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
     />,
   );
 
-  store.getCheck(0, 0).appendStdout("alpha");
-  store.getCheck(0, 1).appendStdout("bravo");
+  store.getCheck(0, 0).setOutput("alpha");
+  store.getCheck(0, 1).setOutput("bravo");
 
   let frame = await waitForFrameMatch(ink, /<n> to focus/);
 
@@ -85,7 +85,7 @@ test("shows output for failed checks in the list view", async () => {
       projects: [
         {
           ...SAMPLE_PROJECT,
-          checks: [{ name: "fail", command: "err" }],
+          checks: [{ name: "fail", command: "err", cwd: "/tmp/project" }],
         },
       ],
     },
@@ -102,7 +102,7 @@ test("shows output for failed checks in the list view", async () => {
   );
 
   const check = store.getCheck(0, 0);
-  check.appendStdout("problem");
+  check.setOutput("problem");
   check.markFailed(1, null);
 
   const frame = await waitForFrameMatch(ink, /problem/);

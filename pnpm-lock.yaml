@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@xterm/addon-serialize':
+        specifier: ^0.13.0
+        version: 0.13.0(@xterm/xterm@5.5.0)
+      '@xterm/headless':
+        specifier: ^5.5.0
+        version: 5.5.0
       commander:
         specifier: ^14.0.2
         version: 14.0.2
@@ -420,6 +426,17 @@ packages:
 
   '@types/react@19.2.6':
     resolution: {integrity: sha512-p/jUvulfgU7oKtj6Xpk8cA2Y1xKTtICGpJYeJXz2YVO2UcvjQgeRMLDGfDeqeRW2Ta+0QNFwcc8X3GH8SxZz6w==}
+
+  '@xterm/addon-serialize@0.13.0':
+    resolution: {integrity: sha512-kGs8o6LWAmN1l2NpMp01/YkpxbmO4UrfWybeGu79Khw5K9+Krp7XhXbBTOTc3GJRRhd6EmILjpR8k5+odY39YQ==}
+    peerDependencies:
+      '@xterm/xterm': ^5.0.0
+
+  '@xterm/headless@5.5.0':
+    resolution: {integrity: sha512-5xXB7kdQlFBP82ViMJTwwEc3gKCLGKR/eoxQm4zge7GPBl86tCdI0IdPJjoKd8mUSFXz5V7i/25sfsEkP4j46g==}
+
+  '@xterm/xterm@5.5.0':
+    resolution: {integrity: sha512-hqJHYaQb5OptNunnyAnkHyM8aCjZ1MEIDTQu1iIbbTD/xops91NB5yq1ZK/dC2JDbVWtF23zUtl9JE2NqwT87A==}
 
   abbrev@4.0.0:
     resolution: {integrity: sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA==}
@@ -1230,6 +1247,14 @@ snapshots:
   '@types/react@19.2.6':
     dependencies:
       csstype: 3.2.3
+
+  '@xterm/addon-serialize@0.13.0(@xterm/xterm@5.5.0)':
+    dependencies:
+      '@xterm/xterm': 5.5.0
+
+  '@xterm/headless@5.5.0': {}
+
+  '@xterm/xterm@5.5.0': {}
 
   abbrev@4.0.0: {}
 

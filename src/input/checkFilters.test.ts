@@ -4,12 +4,12 @@ import { filterProjectsByRules } from "./checkFilters.js";
 import type { CheckFilterRule } from "./cli.js";
 
 const sampleChecks = [
-  { name: "lint", command: "foo" },
-  { name: "lint:deep", command: "foo" },
-  { name: "lint:deep:check", command: "foo" },
-  { name: "test", command: "foo" },
-  { name: "test:deep", command: "foo" },
-  { name: "test:deep:check", command: "foo" },
+  { name: "lint", command: "foo", cwd: "/tmp/project" },
+  { name: "lint:deep", command: "foo", cwd: "/tmp/project" },
+  { name: "lint:deep:check", command: "foo", cwd: "/tmp/project" },
+  { name: "test", command: "foo", cwd: "/tmp/project" },
+  { name: "test:deep", command: "foo", cwd: "/tmp/project" },
+  { name: "test:deep:check", command: "foo", cwd: "/tmp/project" },
 ];
 
 const sampleProjects = [

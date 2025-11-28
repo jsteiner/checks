@@ -5,8 +5,8 @@ import type { CheckResult } from "../types.js";
 import { Project } from "./Project.js";
 
 const SAMPLE_CHECKS = [
-  { name: "lint", command: "pnpm lint" },
-  { name: "test", command: "pnpm test" },
+  { name: "lint", command: "pnpm lint", cwd: "/tmp/project" },
+  { name: "test", command: "pnpm test", cwd: "/tmp/project" },
 ];
 
 const SAMPLE_PROJECT = {

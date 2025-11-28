@@ -1,9 +1,14 @@
 import type { ProjectColor } from "./input/projectColors.js";
 
+export interface TerminalDimensions {
+  columns: number;
+  rows: number;
+}
+
 export interface CheckDefinition {
   name: string;
   command: string;
-  cwd?: string;
+  cwd: string;
 }
 
 export interface ProjectDefinition {
@@ -13,13 +18,9 @@ export interface ProjectDefinition {
   color: ProjectColor;
 }
 
-export interface LogEntry {
-  text: string;
-}
-
 export interface CheckState extends CheckDefinition {
   startedAt: number;
-  log: LogEntry[];
+  output: string;
   result: CheckResult;
 }
 

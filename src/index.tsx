@@ -7,9 +7,11 @@ import { fileURLToPath } from "node:url";
 import { render } from "ink";
 import React from "react";
 import { Executor } from "./executor/index.js";
+import { getTerminalDimensions } from "./executor/terminalConfig.js";
 import { FILE_CONFIG_PATH, FileConfigError } from "./input/fileConfig.js";
 import { buildInput, type Input } from "./input/index.js";
 import { Suite } from "./state/Suite.js";
+import type { TerminalDimensions } from "./types.js";
 import { App } from "./ui/App.js";
 
 export const EXIT_CODES = {
@@ -28,14 +30,15 @@ type RunnerDeps = {
     input: Input,
     store: Suite,
     abortSignal: AbortSignal,
+    terminalDimensions: TerminalDimensions,
   ) => { run: () => Promise<void> };
   logError?: (message: string) => void;
 };
 
 const defaultDeps: Required<RunnerDeps> = {
   renderApp: render,
-  createExecutor: (input, store, abortSignal) =>
-    new Executor(input, store, abortSignal),
+  createExecutor: (input, store, abortSignal, terminalDimensions) =>
+    new Executor(input, store, abortSignal, terminalDimensions),
   logError: (message) => {
     console.error(message);
   },
@@ -64,8 +67,15 @@ export async function runChecks(
     return EXIT_CODES.orchestratorError;
   }
 
+  const terminalDimensions: TerminalDimensions = getTerminalDimensions(process);
+
   const store = new Suite({ projects: input.projects }, startTime);
-  const executor = createExecutor(input, store, abortController.signal);
+  const executor = createExecutor(
+    input,
+    store,
+    abortController.signal,
+    terminalDimensions,
+  );
   const ink = renderApp(
     <App
       store={store}
