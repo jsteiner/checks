@@ -1,4 +1,5 @@
 {
+	"$schema": "./checks.config.schema.json",
 	"project": "checks",
 	"checks": [
 		{ "name": "typecheck", "command": "pnpm typecheck" },

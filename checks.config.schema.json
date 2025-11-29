@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jsteiner/checks/blob/main/checks.config.schema.json",
+  "title": "Checks Configuration",
+  "description": "Configuration file for the checks CLI tool",
+  "type": "object",
+  "required": ["project", "checks"],
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The name of the project",
+      "minLength": 1
+    },
+    "color": {
+      "type": "string",
+      "description": "Optional color for the project in output. Accepts ANSI (green), hex (#005cc5), and rgb (rgb(232, 131, 136)).",
+      "minLength": 1
+    },
+    "checks": {
+      "type": "array",
+      "description": "Array of checks to run",
+      "items": {
+        "type": "object",
+        "required": ["name", "command"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the check",
+            "minLength": 1
+          },
+          "command": {
+            "type": "string",
+            "description": "The shell command to execute for this check",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
