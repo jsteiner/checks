@@ -2,11 +2,12 @@ import { useApp } from "ink";
 import { useSyncExternalStore } from "react";
 import type { Suite as SuiteStore } from "../state/Suite.js";
 import { Check } from "./Check/index.js";
+import { WithDividers } from "./Divider.js";
 import { useAbortExit } from "./hooks/useAbortExit.js";
 import { useFocus } from "./hooks/useFocus.js";
 import { LayoutProvider } from "./LayoutContext.js";
 import { Legend } from "./Legend.js";
-import { Suite } from "./Suite.js";
+import { Suite } from "./Suite/index.js";
 
 interface AppProps {
   store: SuiteStore;
@@ -36,12 +37,14 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   return (
     <LayoutProvider checks={checks}>
       {focusedCheck ? (
-        <Check
-          color={focusedCheck.project.color}
-          check={focusedCheck.check}
-          index={focusedCheck.index}
-          showOutput
-        />
+        <WithDividers>
+          <Check
+            project={focusedCheck.project}
+            check={focusedCheck.check}
+            index={focusedCheck.index}
+            showOutput
+          />
+        </WithDividers>
       ) : (
         <Suite projects={projects} />
       )}

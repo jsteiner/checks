@@ -1,5 +1,6 @@
 import { Box, Text, useInput } from "ink";
 import { useMemo } from "react";
+import { INSET } from "./layout.js";
 import type { HotkeyConfig } from "./types.js";
 
 interface LegendProps {
@@ -52,7 +53,7 @@ export function Legend({
   );
 
   return (
-    <Box marginTop={1} paddingLeft={2}>
+    <Box marginTop={1} paddingX={INSET}>
       <Text>
         {hotkeys.map((item, index) => {
           const isLast = index === hotkeys.length - 1;

@@ -1,5 +1,5 @@
 import type { TerminalDimensions } from "../types.js";
-import { CHECK_HORIZONTAL_OVERHEAD } from "../ui/layout.js";
+import { TOTAL_INSET } from "../ui/layout.js";
 
 export const DEFAULT_COLUMNS = 80;
 const DEFAULT_ROWS_PTY = 24;
@@ -22,7 +22,7 @@ export function getTerminalDimensions(
 }
 
 export function calculatePtyColumns(terminalColumns: number): number {
-  const availableColumns = terminalColumns - CHECK_HORIZONTAL_OVERHEAD;
+  const availableColumns = terminalColumns - TOTAL_INSET;
   return Math.max(DEFAULT_COLUMNS, availableColumns);
 }
 

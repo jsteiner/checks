@@ -1,36 +1,32 @@
 import { Box, Spacer, Text } from "ink";
 import type { ProjectState } from "../../types.js";
 import { formatDuration } from "../display.js";
-import { CHECK_SIDE_OVERHEAD } from "../layout.js";
 import { STATUS_COLORS, STATUS_LABELS } from "../status.js";
 
-const HEADER_PADDING = CHECK_SIDE_OVERHEAD;
-
-interface ProjectHeaderProps {
+interface ProjectSummaryProps {
   project: ProjectState;
 }
 
-export function ProjectHeader({ project }: ProjectHeaderProps) {
+export function ProjectSummary({ project }: ProjectSummaryProps) {
   return (
-    <Box
-      flexDirection="row"
-      paddingLeft={HEADER_PADDING}
-      paddingRight={HEADER_PADDING}
-      gap={HEADER_PADDING}
-    >
+    <Box flexDirection="row" gap={2}>
       <Text color={project.color}>{project.project}</Text>
-      {project.isComplete ? (
-        <Box flexGrow={1} flexDirection="row">
-          <ProjectStatus project={project} />
-          <Spacer />
-          <Text color="gray">{formatDuration(project.summary.durationMs)}</Text>
-        </Box>
-      ) : null}
+      <Box flexGrow={1} flexDirection="row">
+        <ProjectStatus project={project} />
+        {project.isComplete ? (
+          <>
+            <Spacer />
+            <Text color="gray">
+              {formatDuration(project.summary.durationMs)}
+            </Text>
+          </>
+        ) : null}
+      </Box>
     </Box>
   );
 }
 
-function ProjectStatus({ project }: ProjectHeaderProps) {
+function ProjectStatus({ project }: ProjectSummaryProps) {
   const { summary } = project;
 
   const allPassed =
@@ -39,12 +35,12 @@ function ProjectStatus({ project }: ProjectHeaderProps) {
     summary.failed === 0 &&
     summary.aborted === 0;
 
+  if (!project.isComplete) {
+    return <Text color={STATUS_COLORS.running}>{STATUS_LABELS.running}</Text>;
+  }
+
   if (allPassed) {
-    return (
-      <Box gap={2}>
-        <Text color={STATUS_COLORS.passed}>all passed</Text>
-      </Box>
-    );
+    return <Text color={STATUS_COLORS.passed}>all passed</Text>;
   }
 
   return (

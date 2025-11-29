@@ -123,7 +123,7 @@ test("spawns with provided env and process settings", async () => {
     assert.equal(file, "/bin/zsh");
     assert.deepEqual(args, ["-c", "echo hi"]);
     assert.deepEqual(options, {
-      cols: 116,
+      cols: 118,
       rows: 40,
       cwd: "/custom/cwd",
       env,

@@ -1,6 +1,7 @@
 import { Box } from "ink";
-import type { ProjectState } from "../types.js";
-import { Project } from "./Project/index.js";
+import type { ProjectState } from "../../types.js";
+import { Project } from "../Project/index.js";
+import { Summary } from "./Summary.js";
 
 interface SuiteProps {
   projects: ProjectState[];
@@ -24,6 +25,8 @@ export function Suite({ projects }: SuiteProps) {
           />
         );
       })}
+
+      <Summary projects={projects} />
     </Box>
   );
 }

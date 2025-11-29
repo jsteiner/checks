@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import { createCheck } from "../test/helpers/check.js";
-import { stripAnsi } from "../test/helpers/ui.js";
-import type { ProjectState } from "../types.js";
-import { LayoutProvider } from "./LayoutContext.js";
-import { Suite } from "./Suite.js";
+import { createCheck } from "../../test/helpers/check.js";
+import { stripAnsi } from "../../test/helpers/ui.js";
+import type { ProjectState } from "../../types.js";
+import { LayoutProvider } from "../LayoutContext.js";
+import { Suite } from "./index.js";
 
 test("shows a project summary in the header", () => {
   const check = createCheck({
@@ -168,7 +168,7 @@ test("renders multiple projects with sequential check indexes", () => {
 
   const frame = stripAnsi(lastFrame() ?? "");
 
-  assert.match(frame, /1\.\s+passed\s+one/);
-  assert.match(frame, /2\.\s+passed\s+two/);
-  assert.match(frame, /3\.\s+passed\s+three/);
+  assert.match(frame, /1\.\s+passed\s+alpha\/one/);
+  assert.match(frame, /2\.\s+passed\s+beta\/two/);
+  assert.match(frame, /3\.\s+passed\s+beta\/three/);
 });

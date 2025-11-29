@@ -73,7 +73,7 @@ test("getTerminalDimensions uses partial stdout values", () => {
 });
 
 test("calculatePtyColumns subtracts overhead and respects minimum", () => {
-  assert.equal(calculatePtyColumns(100), 96);
+  assert.equal(calculatePtyColumns(100), 98);
   assert.equal(calculatePtyColumns(DEFAULT_COLUMNS), DEFAULT_COLUMNS);
   assert.equal(calculatePtyColumns(50), DEFAULT_COLUMNS);
 });
@@ -83,7 +83,7 @@ test("getPtyDimensions applies column calculation", () => {
 
   const result = getPtyDimensions(terminalDimensions);
 
-  assert.equal(result.columns, 116);
+  assert.equal(result.columns, 118);
   assert.equal(result.rows, 30);
 });
 
@@ -92,7 +92,7 @@ test("getBufferDimensions uses fixed row count", () => {
 
   const result = getBufferDimensions(terminalDimensions);
 
-  assert.equal(result.columns, 116);
+  assert.equal(result.columns, 118);
   assert.equal(result.rows, BUFFER_ROWS);
 });
 

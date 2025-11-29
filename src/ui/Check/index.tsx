@@ -1,46 +1,21 @@
 import { Box } from "ink";
-import type { ProjectColor } from "../../input/projectColors.js";
-import type { CheckState } from "../../types.js";
-import { CHECK_INSET } from "../layout.js";
+import type { CheckState, ProjectState } from "../../types.js";
+import { INSET } from "../layout.js";
 import { CheckOutput } from "./CheckOutput.js";
 import { CheckSummary } from "./CheckSummary.js";
 
 interface CheckProps {
-  color: ProjectColor;
+  project: ProjectState;
   check: CheckState;
   showOutput: boolean;
   index: number;
 }
 
-const borderColor = "cyan";
-
-export function Check({ color, check, showOutput, index }: CheckProps) {
+export function Check({ project, check, showOutput, index }: CheckProps) {
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={color}
-      paddingX={CHECK_INSET}
-      gap={1}
-    >
+    <Box flexDirection="column" paddingX={INSET} gap={1}>
+      <CheckSummary project={project} check={check} index={index} />
       <CheckOutput check={check} showOutput={showOutput} />
-      {!showOutput ? null : <Divider />}
-      <CheckSummary check={check} index={index} />
     </Box>
-  );
-}
-
-function Divider() {
-  return (
-    <Box
-      width="auto"
-      borderStyle="single"
-      borderColor={borderColor}
-      flexGrow={1}
-      borderBottom={true}
-      borderTop={false}
-      borderLeft={false}
-      borderRight={false}
-    />
   );
 }

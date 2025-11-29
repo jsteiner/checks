@@ -3,7 +3,7 @@ import test from "node:test";
 import { render } from "ink-testing-library";
 import type { ReactElement } from "react";
 import { stripAnsi } from "../../test/helpers/ui.js";
-import type { CheckState } from "../../types.js";
+import type { CheckState, ProjectState } from "../../types.js";
 import { LayoutProvider } from "../LayoutContext.js";
 import { CheckSummary } from "./CheckSummary.js";
 
@@ -15,13 +15,28 @@ const BASE_CHECK: Omit<CheckState, "result"> = {
   output: "",
 };
 
+const BASE_PROJECT: ProjectState = {
+  project: "test-project",
+  path: "/tmp/config.json",
+  color: "cyan",
+  checks: [],
+  summary: {
+    total: 0,
+    passed: 0,
+    failed: 0,
+    aborted: 0,
+    durationMs: 0,
+  },
+  isComplete: false,
+};
+
 test("shows duration to the right of the command after completion", () => {
   const check: CheckState = {
     ...BASE_CHECK,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   };
   const { lastFrame } = renderWithLayout(
-    <CheckSummary check={check} index={0} />,
+    <CheckSummary project={BASE_PROJECT} check={check} index={0} />,
     [check],
   );
 
@@ -32,7 +47,7 @@ test("shows duration to the right of the command after completion", () => {
 test("omits duration while running", () => {
   const check: CheckState = { ...BASE_CHECK, result: { status: "running" } };
   const { lastFrame } = renderWithLayout(
-    <CheckSummary check={check} index={0} />,
+    <CheckSummary project={BASE_PROJECT} check={check} index={0} />,
     [check],
   );
 
@@ -52,14 +67,15 @@ test("pads the command so durations align", () => {
   };
   const { lastFrame } = renderWithLayout(
     <>
-      <CheckSummary check={check} index={0} />
-      <CheckSummary check={widestCheck} index={1} />
+      <CheckSummary project={BASE_PROJECT} check={check} index={0} />
+      <CheckSummary project={BASE_PROJECT} check={widestCheck} index={1} />
     </>,
     [check, widestCheck],
   );
 
   const frame = stripAnsi(lastFrame() ?? "");
-  const [firstLine, secondLine] = frame.split("\n");
+  const lines = frame.split("\n").filter((line) => line.trim().length > 0);
+  const [firstLine, secondLine] = lines;
   assert.ok(firstLine);
   assert.ok(secondLine);
   const firstDurationIndex = firstLine.indexOf("0.50s");

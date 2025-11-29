@@ -1,4 +1,2 @@
-export const CHECK_INSET = 1;
-const CHECK_BORDER_WIDTH = 1;
-export const CHECK_SIDE_OVERHEAD = CHECK_INSET + CHECK_BORDER_WIDTH;
-export const CHECK_HORIZONTAL_OVERHEAD = CHECK_SIDE_OVERHEAD * 2;
+export const INSET = 1;
+export const TOTAL_INSET = INSET * 2;
