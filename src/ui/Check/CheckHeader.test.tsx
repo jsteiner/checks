@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import { stripAnsi } from "../../test/helpers/ui.js";
 import type { CheckState, ProjectState } from "../../types.js";
 import { LayoutProvider } from "../LayoutContext.js";
-import { CheckSummary } from "./CheckSummary.js";
+import { CheckHeader } from "./CheckHeader.js";
 
 const BASE_CHECK: Omit<CheckState, "result"> = {
   name: "demo",
@@ -36,7 +36,7 @@ test("shows duration to the right of the command after completion", () => {
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   };
   const { lastFrame } = renderWithLayout(
-    <CheckSummary project={BASE_PROJECT} check={check} index={0} />,
+    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
     [check],
   );
 
@@ -47,7 +47,7 @@ test("shows duration to the right of the command after completion", () => {
 test("omits duration while running", () => {
   const check: CheckState = { ...BASE_CHECK, result: { status: "running" } };
   const { lastFrame } = renderWithLayout(
-    <CheckSummary project={BASE_PROJECT} check={check} index={0} />,
+    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
     [check],
   );
 
@@ -67,8 +67,8 @@ test("pads the command so durations align", () => {
   };
   const { lastFrame } = renderWithLayout(
     <>
-      <CheckSummary project={BASE_PROJECT} check={check} index={0} />
-      <CheckSummary project={BASE_PROJECT} check={widestCheck} index={1} />
+      <CheckHeader project={BASE_PROJECT} check={check} index={0} />
+      <CheckHeader project={BASE_PROJECT} check={widestCheck} index={1} />
     </>,
     [check, widestCheck],
   );

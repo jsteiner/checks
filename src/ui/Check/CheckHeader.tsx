@@ -4,13 +4,13 @@ import { formatCheckDurationLabel } from "../display.js";
 import { useLayout } from "../LayoutContext.js";
 import { LONG_STATUS_WIDTH, STATUS_COLORS, STATUS_LABELS } from "../status.js";
 
-interface CheckSummaryProps {
+interface CheckHeaderProps {
   project: ProjectState;
   check: CheckState;
   index: number;
 }
 
-export function CheckSummary({ project, check, index }: CheckSummaryProps) {
+export function CheckHeader({ project, check, index }: CheckHeaderProps) {
   const { indexWidth, nameWidth, commandWidth } = useLayout();
   const status: CheckStatus = check.result.status;
   const indexLabel = `${index + 1}.`.padEnd(indexWidth, " ");
