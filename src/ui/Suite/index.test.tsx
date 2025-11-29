@@ -37,7 +37,7 @@ test("shows a project summary in the header", () => {
   }
 
   const { lastFrame } = render(
-    <LayoutProvider checks={project.checks}>
+    <LayoutProvider checks={project.checks} projects={projects}>
       <Suite projects={projects} />
     </LayoutProvider>,
   );
@@ -86,7 +86,7 @@ test("shows a status breakdown when any check fails", () => {
   }
 
   const { lastFrame } = render(
-    <LayoutProvider checks={project.checks}>
+    <LayoutProvider checks={project.checks} projects={projects}>
       <Suite projects={projects} />
     </LayoutProvider>,
   );
@@ -165,7 +165,7 @@ test("renders multiple projects with sequential check indexes", () => {
   ];
 
   const { lastFrame } = render(
-    <LayoutProvider checks={checks}>
+    <LayoutProvider checks={checks} projects={projects}>
       <Suite projects={projects} />
     </LayoutProvider>,
   );

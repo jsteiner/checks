@@ -1,5 +1,6 @@
 import { Box } from "ink";
 import type { ProjectState } from "../../types.js";
+import { Divider } from "../Divider.js";
 import { Project } from "../Project/index.js";
 import { Summary } from "./Summary.js";
 
@@ -12,19 +13,22 @@ export function Suite({ projects }: SuiteProps) {
 
   return (
     <Box flexDirection="column" gap={1}>
-      {projects.map((project, projectIdx) => {
-        const startIndex = globalIndex;
-        globalIndex += project.checks.length;
+      <Box flexDirection="column" gap={1}>
+        {projects.map((project) => {
+          const startIndex = globalIndex;
+          globalIndex += project.checks.length;
 
-        return (
-          <Project
-            key={project.path}
-            project={project}
-            startIndex={startIndex}
-            marginTop={projectIdx === 0 ? 0 : 1}
-          />
-        );
-      })}
+          return (
+            <Project
+              key={project.path}
+              project={project}
+              startIndex={startIndex}
+            />
+          );
+        })}
+      </Box>
+
+      <Divider />
 
       <Summary projects={projects} />
     </Box>

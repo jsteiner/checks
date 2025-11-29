@@ -57,36 +57,6 @@ test("omits duration while running", () => {
   assert.doesNotMatch(frame, /0\.50s/);
 });
 
-test("pads the command so durations align", () => {
-  const check: CheckState = {
-    ...BASE_CHECK,
-    result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
-  };
-  const widestCheck: CheckState = {
-    ...check,
-    command: `${BASE_CHECK.command}!`,
-  };
-  const { lastFrame } = renderWithLayout(
-    <>
-      <CheckHeader project={BASE_PROJECT} check={check} index={0} />
-      <CheckHeader project={BASE_PROJECT} check={widestCheck} index={1} />
-    </>,
-    [check, widestCheck],
-  );
-
-  const frame = stripAnsi(lastFrame() ?? "");
-  const lines = frame.split("\n").filter((line) => line.trim().length > 0);
-  const [firstLine, secondLine] = lines;
-  assert.ok(firstLine);
-  assert.ok(secondLine);
-  const firstDurationIndex = firstLine.indexOf("0.50s");
-  const secondDurationIndex = secondLine.indexOf("0.50s");
-
-  assert.notEqual(firstDurationIndex, -1);
-  assert.notEqual(secondDurationIndex, -1);
-  assert.equal(firstDurationIndex, secondDurationIndex);
-});
-
 test("truncates commands longer than 20 chars with ellipsis", () => {
   const check: CheckState = {
     ...BASE_CHECK,
@@ -119,6 +89,77 @@ test("does not truncate commands shorter than 20 chars", () => {
   assert.doesNotMatch(frame, /…/);
 });
 
+test("pads project/name combinations so commands align", () => {
+  const shortCheck: CheckState = {
+    ...BASE_CHECK,
+    name: "a",
+    command: "cmd-1",
+    result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
+  };
+  const longCheck: CheckState = {
+    ...BASE_CHECK,
+    name: "very-long-check-name",
+    command: "cmd-2",
+    result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
+  };
+
+  const shortProject: ProjectState = {
+    ...BASE_PROJECT,
+    project: "p1",
+    checks: [shortCheck],
+  };
+
+  const longProject: ProjectState = {
+    ...BASE_PROJECT,
+    project: "longer-project",
+    checks: [longCheck],
+  };
+
+  const { lastFrame } = render(
+    <LayoutProvider
+      checks={[shortCheck, longCheck]}
+      projects={[shortProject, longProject]}
+    >
+      <CheckHeader project={shortProject} check={shortCheck} index={0} />
+      <CheckHeader project={longProject} check={longCheck} index={1} />
+    </LayoutProvider>,
+  );
+
+  const frame = stripAnsi(lastFrame() ?? "");
+  const lines = frame.split("\n").filter((line) => line.trim().length > 0);
+  const [firstLine, secondLine] = lines;
+  assert.ok(firstLine);
+  assert.ok(secondLine);
+
+  // Both commands should start at the same column
+  const firstCommandIndex = firstLine.indexOf("cmd-1");
+  const secondCommandIndex = secondLine.indexOf("cmd-2");
+
+  assert.notEqual(firstCommandIndex, -1);
+  assert.equal(firstCommandIndex, secondCommandIndex);
+});
+
 function renderWithLayout(element: ReactElement, checks: CheckState[]) {
-  return render(<LayoutProvider checks={checks}>{element}</LayoutProvider>);
+  const projects = [
+    {
+      project: "test",
+      path: "/test",
+      color: "white" as const,
+      checks,
+      summary: {
+        total: 0,
+        pending: 0,
+        passed: 0,
+        failed: 0,
+        aborted: 0,
+        durationMs: 0,
+      },
+      isComplete: false,
+    },
+  ];
+  return render(
+    <LayoutProvider checks={checks} projects={projects}>
+      {element}
+    </LayoutProvider>,
+  );
 }

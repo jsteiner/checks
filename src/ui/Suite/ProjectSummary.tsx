@@ -1,6 +1,7 @@
 import { Box, Spacer, Text } from "ink";
 import type { ProjectState } from "../../types.js";
 import { formatDuration } from "../display.js";
+import { useLayout } from "../LayoutContext.js";
 import { STATUS_COLORS, STATUS_LABELS } from "../status.js";
 
 interface ProjectSummaryProps {
@@ -8,9 +9,12 @@ interface ProjectSummaryProps {
 }
 
 export function ProjectSummary({ project }: ProjectSummaryProps) {
+  const { projectWidth } = useLayout();
+  const paddedProjectName = project.project.padEnd(projectWidth);
+
   return (
     <Box flexDirection="row" gap={2}>
-      <Text color={project.color}>{project.project}</Text>
+      <Text color={project.color}>{paddedProjectName}</Text>
       <Box flexGrow={1} flexDirection="row">
         <ProjectStatus project={project} />
         {project.isComplete ? (
@@ -26,7 +30,7 @@ export function ProjectSummary({ project }: ProjectSummaryProps) {
   );
 }
 
-function ProjectStatus({ project }: ProjectSummaryProps) {
+function ProjectStatus({ project }: { project: ProjectState }) {
   const { summary } = project;
 
   const allPassed =

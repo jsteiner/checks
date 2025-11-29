@@ -11,15 +11,16 @@ interface CheckHeaderProps {
 }
 
 export function CheckHeader({ project, check, index }: CheckHeaderProps) {
-  const { indexWidth, nameWidth, commandWidth } = useLayout();
+  const { indexWidth, projectNameWidth, commandWidth } = useLayout();
   const status: CheckStatus = check.result.status;
-  const indexLabel = `${index + 1}.`.padEnd(indexWidth, " ");
-  const statusLabel = STATUS_LABELS[status].padEnd(LONG_STATUS_WIDTH, " ");
-  const nameLabel = check.name.padEnd(nameWidth, " ");
+  const indexLabel = `${index + 1}.`.padEnd(indexWidth);
+  const statusLabel = STATUS_LABELS[status].padEnd(LONG_STATUS_WIDTH);
+  const combinedLength = project.project.length + 1 + check.name.length;
+  const padding = " ".repeat(Math.max(0, projectNameWidth - combinedLength));
   const commandLabel =
     check.command.length > commandWidth
       ? `${check.command.slice(0, commandWidth - 1)}…`
-      : check.command.padEnd(commandWidth, " ");
+      : check.command.padEnd(commandWidth);
   const durationLabel = formatCheckDurationLabel(check);
 
   return (
@@ -30,7 +31,8 @@ export function CheckHeader({ project, check, index }: CheckHeaderProps) {
         <Text>
           <Text color={project.color}>{project.project}</Text>
           <Text color="gray">/</Text>
-          <Text>{nameLabel}</Text>
+          <Text>{check.name}</Text>
+          <Text>{padding}</Text>
         </Text>
         <Text color="gray">{commandLabel}</Text>
       </Box>
