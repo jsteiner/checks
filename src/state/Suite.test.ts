@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
-import { getDefaultProjectColor } from "../input/projectColors.js";
+import { getProjectColor } from "../input/projectColors.js";
 import { Suite } from "./Suite.js";
 
 const PROJECTS = [
   {
     project: "alpha",
     path: "/tmp/alpha.json",
-    color: getDefaultProjectColor(0),
+    color: getProjectColor(0),
     checks: [
       { name: "a", command: "echo a", cwd: "/tmp/project" },
       { name: "b", command: "echo b", cwd: "/tmp/project" },
@@ -17,7 +17,7 @@ const PROJECTS = [
   {
     project: "beta",
     path: "/tmp/beta.json",
-    color: getDefaultProjectColor(1),
+    color: getProjectColor(1),
     checks: [{ name: "c", command: "echo c", cwd: "/tmp/project" }],
   },
 ];
@@ -29,7 +29,7 @@ test("snapshot returns current state as plain objects", () => {
   assert.deepEqual(snapshot, {
     projects: PROJECTS.map((project, index) => ({
       ...project,
-      color: getDefaultProjectColor(index),
+      color: getProjectColor(index),
       checks: project.checks.map((check) => ({
         ...check,
         startedAt: 0,

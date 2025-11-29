@@ -8,7 +8,7 @@ import {
   FileConfigError,
   loadFileConfig,
 } from "./fileConfig.js";
-import { resolveProjectColor } from "./projectColors.js";
+import { getProjectColor } from "./projectColors.js";
 
 export interface Input extends SuiteDefinition {
   projects: ProjectDefinition[];
@@ -27,7 +27,7 @@ export async function buildInput(
       const cwd = path.dirname(configFilePath);
       return {
         ...config,
-        color: resolveProjectColor(config.color, index),
+        color: config.color ?? getProjectColor(index),
         path: configFilePath,
         checks: config.checks.map((check) => ({
           ...check,

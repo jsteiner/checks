@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Input } from "../input/index.js";
-import { getDefaultProjectColor } from "../input/projectColors.js";
+import { getProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import { DEFAULT_TEST_DIMENSIONS } from "../test/helpers/terminal.js";
@@ -17,7 +17,7 @@ async function executeChecks(
   const project = {
     project: "config",
     path: "/tmp/checks.config.json",
-    color: getDefaultProjectColor(0),
+    color: getProjectColor(0),
     checks,
   };
   const store = new Suite({ projects: [project] }, Date.now());

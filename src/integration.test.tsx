@@ -4,7 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
 import { Executor } from "./executor/index.js";
 import type { Input } from "./input/index.js";
-import { getDefaultProjectColor } from "./input/projectColors.js";
+import { getProjectColor } from "./input/projectColors.js";
 import { Suite } from "./state/Suite.js";
 import { DEFAULT_TEST_DIMENSIONS } from "./test/helpers/terminal.js";
 import { stripAnsi } from "./test/helpers/ui.js";
@@ -27,7 +27,7 @@ test("runs commands in parallel and renders updates", async () => {
   const project = {
     project: "integration",
     path: "/tmp/checks.config.json",
-    color: getDefaultProjectColor(0),
+    color: getProjectColor(0),
     checks: definitions,
   };
 

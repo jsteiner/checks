@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getDefaultProjectColor } from "../input/projectColors.js";
+import { getProjectColor } from "../input/projectColors.js";
 import { Project } from "../state/Project.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
 import { DEFAULT_TEST_DIMENSIONS } from "../test/helpers/terminal.js";
@@ -17,7 +17,7 @@ async function executeCheck(
     {
       project: "config",
       path: "/tmp/checks.config.json",
-      color: getDefaultProjectColor(0),
+      color: getProjectColor(0),
       checks: [check],
     },
     0,
