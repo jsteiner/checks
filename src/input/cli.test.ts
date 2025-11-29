@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { availableParallelism } from "node:os";
 import test from "node:test";
 import { parseCLIOptions } from "./cli.js";
+
+const DEFAULT_CONCURRENCY = Math.max(
+  1,
+  Math.floor(availableParallelism() * 0.75),
+);
 
 test("parses filters in argv order and trims patterns", () => {
   const options = parseCLIOptions([
@@ -17,7 +23,7 @@ test("parses filters in argv order and trims patterns", () => {
     interactive: false,
     recursive: false,
     failFast: false,
-    concurrency: Number.POSITIVE_INFINITY,
+    concurrency: DEFAULT_CONCURRENCY,
     filters: [
       { type: "only", pattern: "lint" },
       { type: "only", pattern: "web/typecheck" },
@@ -43,4 +49,62 @@ test("drops empty patterns after trimming", () => {
     { type: "only", pattern: "lint" },
     { type: "exclude", pattern: "lint:biome" },
   ]);
+});
+
+test("parses concurrency as a positive integer", () => {
+  const options = parseCLIOptions([
+    "/usr/bin/node",
+    "/tmp/checks",
+    "--concurrency",
+    "4",
+  ]);
+
+  assert.equal(options.concurrency, 4);
+});
+
+test("parses concurrency as Infinity", () => {
+  const options = parseCLIOptions([
+    "/usr/bin/node",
+    "/tmp/checks",
+    "--concurrency",
+    "Infinity",
+  ]);
+
+  assert.equal(options.concurrency, Number.POSITIVE_INFINITY);
+});
+
+test("throws for invalid concurrency values", () => {
+  assert.throws(
+    () => {
+      parseCLIOptions(["/usr/bin/node", "/tmp/checks", "--concurrency", "0"]);
+    },
+    {
+      message: '--concurrency must be a positive integer or "Infinity", got: 0',
+    },
+  );
+
+  assert.throws(
+    () => {
+      parseCLIOptions([
+        "/usr/bin/node",
+        "/tmp/checks",
+        "--concurrency",
+        "invalid",
+      ]);
+    },
+    {
+      message:
+        '--concurrency must be a positive integer or "Infinity", got: invalid',
+    },
+  );
+
+  assert.throws(
+    () => {
+      parseCLIOptions(["/usr/bin/node", "/tmp/checks", "--concurrency", "-5"]);
+    },
+    {
+      message:
+        '--concurrency must be a positive integer or "Infinity", got: -5',
+    },
+  );
 });
