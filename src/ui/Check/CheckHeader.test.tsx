@@ -86,6 +86,38 @@ test("pads the command so durations align", () => {
   assert.equal(firstDurationIndex, secondDurationIndex);
 });
 
+test("truncates commands longer than 20 chars with ellipsis", () => {
+  const check: CheckState = {
+    ...BASE_CHECK,
+    command: "this-is-a-very-long-command-that-exceeds-twenty-characters",
+    result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
+  };
+  const { lastFrame } = renderWithLayout(
+    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
+    [check],
+  );
+
+  const frame = stripAnsi(lastFrame() ?? "");
+  assert.match(frame, /this-is-a-very-long…/);
+  assert.doesNotMatch(frame, /this-is-a-very-long-c/);
+});
+
+test("does not truncate commands shorter than 20 chars", () => {
+  const check: CheckState = {
+    ...BASE_CHECK,
+    command: "short-cmd",
+    result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
+  };
+  const { lastFrame } = renderWithLayout(
+    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
+    [check],
+  );
+
+  const frame = stripAnsi(lastFrame() ?? "");
+  assert.match(frame, /short-cmd/);
+  assert.doesNotMatch(frame, /…/);
+});
+
 function renderWithLayout(element: ReactElement, checks: CheckState[]) {
   return render(<LayoutProvider checks={checks}>{element}</LayoutProvider>);
 }

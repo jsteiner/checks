@@ -16,7 +16,10 @@ export function CheckHeader({ project, check, index }: CheckHeaderProps) {
   const indexLabel = `${index + 1}.`.padEnd(indexWidth, " ");
   const statusLabel = STATUS_LABELS[status].padEnd(LONG_STATUS_WIDTH, " ");
   const nameLabel = check.name.padEnd(nameWidth, " ");
-  const commandLabel = check.command.padEnd(commandWidth, " ");
+  const commandLabel =
+    check.command.length > commandWidth
+      ? `${check.command.slice(0, commandWidth - 1)}…`
+      : check.command.padEnd(commandWidth, " ");
   const durationLabel = formatCheckDurationLabel(check);
 
   return (

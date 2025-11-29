@@ -36,10 +36,11 @@ function calculateLayout(checks: CheckState[]): LayoutValue {
     (max, check) => Math.max(max, check.name.length),
     0,
   );
-  const commandWidth = checks.reduce(
+  const maxCommandLength = checks.reduce(
     (max, check) => Math.max(max, check.command.length),
     0,
   );
+  const commandWidth = Math.min(maxCommandLength, 20);
   const indexWidth = Math.max(1, String(checks.length).length);
 
   return { nameWidth, indexWidth, commandWidth };
