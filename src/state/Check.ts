@@ -12,21 +12,16 @@ export class Check {
   readonly name: string;
   readonly command: string;
   readonly cwd: string;
-  readonly startedAt: number;
+  startedAt: number | null = null;
 
-  private _result: CheckResult = { status: "running" };
+  private _result: CheckResult = { status: "pending" };
   private _output = "";
   private readonly onUpdate: () => void;
 
-  constructor(
-    definition: CheckDefinition,
-    startedAt: number,
-    onUpdate: () => void = () => {},
-  ) {
+  constructor(definition: CheckDefinition, onUpdate: () => void = () => {}) {
     this.name = definition.name;
     this.command = definition.command;
     this.cwd = definition.cwd;
-    this.startedAt = startedAt;
     this.onUpdate = onUpdate;
   }
 
@@ -43,7 +38,12 @@ export class Check {
   }
 
   get finishedAt(): number | null {
-    if (this._result.status === "running") return null;
+    if (
+      this._result.status === "pending" ||
+      this._result.status === "running"
+    ) {
+      return null;
+    }
     return this._result.finishedAt;
   }
 
@@ -54,6 +54,19 @@ export class Check {
   setOutput(text: string): boolean {
     if (this._output === text) return false;
     this._output = text;
+    this.onUpdate();
+    return true;
+  }
+
+  setResult(result: CheckResult): void {
+    this._result = result;
+    this.onUpdate();
+  }
+
+  markRunning(): boolean {
+    if (this.isTerminal()) return false;
+    this.startedAt = Date.now();
+    this._result = { status: "running" };
     this.onUpdate();
     return true;
   }
@@ -104,9 +117,12 @@ export class Check {
 
   summary(): Summary {
     const durationMs =
-      this.finishedAt === null ? 0 : this.finishedAt - this.startedAt;
+      this.finishedAt === null || this.startedAt === null
+        ? 0
+        : this.finishedAt - this.startedAt;
     return {
       total: 1,
+      pending: this.status === "pending" ? 1 : 0,
       passed: this.status === "passed" ? 1 : 0,
       failed: this.status === "failed" ? 1 : 0,
       aborted: this.status === "aborted" ? 1 : 0,

@@ -17,6 +17,7 @@ test("parses filters in argv order and trims patterns", () => {
     interactive: false,
     recursive: false,
     failFast: false,
+    concurrency: Number.POSITIVE_INFINITY,
     filters: [
       { type: "only", pattern: "lint" },
       { type: "only", pattern: "web/typecheck" },

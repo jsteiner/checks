@@ -51,7 +51,6 @@ export async function runChecks(
 ): Promise<number> {
   const { renderApp, createExecutor, logError } = { ...defaultDeps, ...deps };
 
-  const startTime = Date.now();
   const abortController = new AbortController();
   installInterruptHandler(abortController);
 
@@ -69,7 +68,7 @@ export async function runChecks(
 
   const terminalDimensions: TerminalDimensions = getTerminalDimensions(process);
 
-  const store = new Suite({ projects: input.projects }, startTime);
+  const store = new Suite({ projects: input.projects });
   const executor = createExecutor(
     input,
     store,

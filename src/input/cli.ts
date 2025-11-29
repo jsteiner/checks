@@ -9,6 +9,7 @@ export interface CLIOptions {
   interactive: boolean;
   failFast: boolean;
   recursive: boolean;
+  concurrency: number;
   filters: CheckFilterRule[];
 }
 
@@ -38,19 +39,47 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
       "-e, --exclude <pattern...>",
       "skip checks whose name matches this pattern",
       [],
+    )
+    .option(
+      "-c, --concurrency <number>",
+      "maximum number of checks to run concurrently",
+      "Infinity",
     );
 
   program.parse(argv);
 
-  const { only, exclude, ...base } = program.opts<{
+  const {
+    only,
+    exclude,
+    concurrency: concurrencyStr,
+    ...base
+  } = program.opts<{
     interactive: boolean;
     failFast: boolean;
     recursive: boolean;
+    concurrency: string;
     only: string[];
     exclude: string[];
   }>();
 
-  return { ...base, filters: toFilterRules(only, exclude) };
+  const concurrency = parseConcurrency(concurrencyStr);
+
+  return { ...base, concurrency, filters: toFilterRules(only, exclude) };
+}
+
+function parseConcurrency(value: string): number {
+  if (value === "Infinity") {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    throw new Error(
+      `--concurrency must be a positive integer or "Infinity", got: ${value}`,
+    );
+  }
+
+  return parsed;
 }
 
 function toFilterRules(only: string[], exclude: string[]): CheckFilterRule[] {

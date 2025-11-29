@@ -44,6 +44,7 @@ export class CheckExecutor {
 
       try {
         this.child = this.spawnFn(check.command, check.cwd, onResize);
+        check.markRunning();
       } catch (error) {
         cleanup();
         const message = error instanceof Error ? error.message : "Spawn failed";

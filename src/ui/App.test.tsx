@@ -23,7 +23,7 @@ const SAMPLE_PROJECT = {
 };
 
 test("shows project header with a compact summary", async () => {
-  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const controller = new AbortController();
   const ink = render(
     <App
@@ -47,7 +47,7 @@ test("shows project header with a compact summary", async () => {
 });
 
 test("shows interactive legend and focuses/unfocuses checks", async () => {
-  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const controller = new AbortController();
   const ink = render(
     <App
@@ -80,17 +80,14 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
 });
 
 test("shows output for failed checks in the list view", async () => {
-  const store = new Suite(
-    {
-      projects: [
-        {
-          ...SAMPLE_PROJECT,
-          checks: [{ name: "fail", command: "err", cwd: "/tmp/project" }],
-        },
-      ],
-    },
-    Date.now(),
-  );
+  const store = new Suite({
+    projects: [
+      {
+        ...SAMPLE_PROJECT,
+        checks: [{ name: "fail", command: "err", cwd: "/tmp/project" }],
+      },
+    ],
+  });
   const controller = new AbortController();
   const ink = render(
     <App
@@ -112,7 +109,7 @@ test("shows output for failed checks in the list view", async () => {
 });
 
 test("aborts when quitting while checks are running", async () => {
-  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const controller = new AbortController();
   let aborted = false;
 
@@ -138,7 +135,7 @@ test("aborts when quitting while checks are running", async () => {
 });
 
 test("ignores number keys outside the focusable range", async () => {
-  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const controller = new AbortController();
   const ink = render(
     <App
@@ -166,7 +163,7 @@ test("exits when the abort signal is already fired", async () => {
     removeEventListener: () => events.push("remove"),
   } as unknown as AbortSignal;
 
-  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const ink = render(
     <App
       store={store}
@@ -182,7 +179,7 @@ test("exits when the abort signal is already fired", async () => {
 });
 
 test("does not abort when quitting after completion", async () => {
-  const store = new Suite({ projects: [SAMPLE_PROJECT] }, Date.now());
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
   store.getCheck(0, 0).markPassed(0);
   store.getCheck(0, 1).markPassed(0);
 

@@ -23,7 +23,7 @@ const PROJECTS = [
 ];
 
 test("snapshot returns current state as plain objects", () => {
-  const store = new Suite({ projects: PROJECTS }, 0);
+  const store = new Suite({ projects: PROJECTS });
   const snapshot = store.toState();
 
   assert.deepEqual(snapshot, {
@@ -32,12 +32,13 @@ test("snapshot returns current state as plain objects", () => {
       color: getProjectColor(index),
       checks: project.checks.map((check) => ({
         ...check,
-        startedAt: 0,
+        startedAt: null,
         output: "",
-        result: { status: "running" },
+        result: { status: "pending" },
       })),
       summary: {
         total: project.checks.length,
+        pending: project.checks.length,
         passed: 0,
         failed: 0,
         aborted: 0,
@@ -45,13 +46,20 @@ test("snapshot returns current state as plain objects", () => {
       },
       isComplete: false,
     })),
-    summary: { total: 3, passed: 0, failed: 0, aborted: 0, durationMs: 0 },
+    summary: {
+      total: 3,
+      pending: 3,
+      passed: 0,
+      failed: 0,
+      aborted: 0,
+      durationMs: 0,
+    },
     isComplete: false,
   });
 });
 
 test("summarizes across all projects", () => {
-  const store = new Suite({ projects: PROJECTS }, Date.now());
+  const store = new Suite({ projects: PROJECTS });
   store.getCheck(0, 0).markPassed(0);
   store.getCheck(0, 1).markFailed(1, null);
   store.getCheck(1, 0).markAborted();
@@ -65,7 +73,7 @@ test("summarizes across all projects", () => {
 });
 
 test("waits for completion across projects", async () => {
-  const store = new Suite({ projects: PROJECTS }, Date.now());
+  const store = new Suite({ projects: PROJECTS });
   const promise = store.waitForCompletion();
   let resolved = false;
   void promise.then(() => {

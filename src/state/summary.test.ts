@@ -2,12 +2,27 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { combineSummaries } from "./summary.js";
 
-const ZERO = { total: 0, passed: 0, failed: 0, aborted: 0, durationMs: 0 };
+const ZERO = {
+  total: 0,
+  pending: 0,
+  passed: 0,
+  failed: 0,
+  aborted: 0,
+  durationMs: 0,
+};
 
 test("combines counts and uses max duration", () => {
-  const first = { total: 2, passed: 1, failed: 1, aborted: 0, durationMs: 50 };
+  const first = {
+    total: 2,
+    pending: 0,
+    passed: 1,
+    failed: 1,
+    aborted: 0,
+    durationMs: 50,
+  };
   const second = {
     total: 1,
+    pending: 0,
     passed: 0,
     failed: 0,
     aborted: 1,
@@ -18,6 +33,7 @@ test("combines counts and uses max duration", () => {
 
   assert.deepEqual(combined, {
     total: 3,
+    pending: 0,
     passed: 1,
     failed: 1,
     aborted: 1,

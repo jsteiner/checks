@@ -19,7 +19,7 @@ export interface ProjectDefinition {
 }
 
 export interface CheckState extends CheckDefinition {
-  startedAt: number;
+  startedAt: number | null;
   output: string;
   result: CheckResult;
 }
@@ -43,6 +43,9 @@ export interface SuiteState extends SuiteDefinition {
 
 export type CheckResult =
   | {
+      status: "pending";
+    }
+  | {
       status: "running";
     }
   | {
@@ -65,6 +68,7 @@ export type CheckStatus = CheckResult["status"];
 
 export interface Summary {
   total: number;
+  pending: number;
   passed: number;
   failed: number;
   aborted: number;

@@ -31,7 +31,7 @@ test("runs commands in parallel and renders updates", async () => {
     checks: definitions,
   };
 
-  const store = new Suite({ projects: [project] }, Date.now());
+  const store = new Suite({ projects: [project] });
   const controller = new AbortController();
   const input: Input = {
     projects: [project],
@@ -39,6 +39,7 @@ test("runs commands in parallel and renders updates", async () => {
       interactive: false,
       failFast: false,
       recursive: false,
+      concurrency: Number.POSITIVE_INFINITY,
       filters: [],
     },
   };

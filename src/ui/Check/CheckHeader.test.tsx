@@ -22,6 +22,7 @@ const BASE_PROJECT: ProjectState = {
   checks: [],
   summary: {
     total: 0,
+    pending: 0,
     passed: 0,
     failed: 0,
     aborted: 0,

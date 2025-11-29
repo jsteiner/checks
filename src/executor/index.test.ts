@@ -20,13 +20,14 @@ async function executeChecks(
     color: getProjectColor(0),
     checks,
   };
-  const store = new Suite({ projects: [project] }, Date.now());
+  const store = new Suite({ projects: [project] });
   const input: Input = {
     projects: [project],
     options: {
       interactive: false,
       failFast: false,
       recursive: false,
+      concurrency: Number.POSITIVE_INFINITY,
       filters: [],
       ...options,
     },
@@ -137,4 +138,59 @@ test("runs checks from their configured working directory", async () => {
   const first = store.getCheck(0, 0);
   assert.equal(first.result.status, "passed");
   assert.deepEqual(started, [{ command: "echo ok", cwd }]);
+});
+
+test("limits concurrent checks when concurrency option is set", async () => {
+  const checks: Input["projects"][number]["checks"] = [
+    { name: "check-1", command: "cmd-1", cwd: "/tmp/project" },
+    { name: "check-2", command: "cmd-2", cwd: "/tmp/project" },
+    { name: "check-3", command: "cmd-3", cwd: "/tmp/project" },
+    { name: "check-4", command: "cmd-4", cwd: "/tmp/project" },
+  ];
+
+  const running = new Set<string>();
+  const maxConcurrent = { value: 0 };
+
+  const spawn: SpawnFunction = (command) => {
+    running.add(command);
+    maxConcurrent.value = Math.max(maxConcurrent.value, running.size);
+
+    const child = createFakeSpawnedProcess();
+
+    setTimeout(() => {
+      running.delete(command);
+      child.emitClose(0, null);
+    }, 5);
+
+    return child;
+  };
+
+  const { store } = await executeChecks(checks, { concurrency: 2 }, spawn);
+
+  for (let i = 0; i < checks.length; i++) {
+    const check = store.getCheck(0, i);
+    assert.equal(check.result.status, "passed");
+  }
+
+  assert.ok(maxConcurrent.value <= 2);
+});
+
+test("sets checks to pending status before they start", async () => {
+  const checks: Input["projects"][number]["checks"] = [
+    { name: "check-1", command: "cmd-1", cwd: "/tmp/project" },
+    { name: "check-2", command: "cmd-2", cwd: "/tmp/project" },
+  ];
+
+  const spawn: SpawnFunction = () => {
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => child.emitClose(0, null));
+    return child;
+  };
+
+  const { store } = await executeChecks(checks, { concurrency: 1 }, spawn);
+
+  for (let i = 0; i < checks.length; i++) {
+    const check = store.getCheck(0, i);
+    assert.equal(check.result.status, "passed");
+  }
 });

@@ -21,7 +21,6 @@ async function executeCheck(
       checks: [check],
     },
     0,
-    Date.now(),
   );
   const executor = new CheckExecutor(
     controller.signal,

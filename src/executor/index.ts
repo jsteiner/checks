@@ -1,3 +1,4 @@
+import pLimit from "p-limit";
 import type { Input } from "../input/index.js";
 import type { Suite } from "../state/Suite.js";
 import type { CheckStatus, TerminalDimensions } from "../types.js";
@@ -26,16 +27,20 @@ export class Executor {
 
   async run(): Promise<void> {
     const failFast = this.input.options.failFast;
+    const limit = pLimit(this.input.options.concurrency);
+
     try {
       await Promise.all(
         this.input.projects.flatMap((config, projectIndex) =>
           config.checks.map((_, checkIndex) =>
-            this.executeSingleCheck(projectIndex, checkIndex).then((status) => {
-              if (failFast && status === "failed" && !this.signal.aborted) {
-                this.abortController.abort();
-              }
-              return status;
-            }),
+            limit(() => this.executeSingleCheck(projectIndex, checkIndex)).then(
+              (status) => {
+                if (failFast && status === "failed" && !this.signal.aborted) {
+                  this.abortController.abort();
+                }
+                return status;
+              },
+            ),
           ),
         ),
       );

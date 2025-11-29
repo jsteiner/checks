@@ -9,9 +9,9 @@ export class Suite {
   private readonly projects: Project[];
   private snapshot: SuiteState;
 
-  constructor(definition: SuiteDefinition, startedAt: number) {
+  constructor(definition: SuiteDefinition) {
     this.projects = definition.projects.map(
-      (project, index) => new Project(project, index, startedAt),
+      (project, index) => new Project(project, index),
     );
     this.snapshot = this.createState();
     this.projects.forEach((store) => {

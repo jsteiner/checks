@@ -6,7 +6,7 @@ const definition = { name: "sample", command: "echo hi", cwd: "/tmp/project" };
 
 test("ignores empty output updates", () => {
   let updates = 0;
-  const check = new Check(definition, Date.now(), () => {
+  const check = new Check(definition, () => {
     updates += 1;
   });
 
@@ -18,7 +18,7 @@ test("ignores empty output updates", () => {
 
 test("does not override a terminal status when marking passed", () => {
   let updates = 0;
-  const check = new Check(definition, Date.now(), () => {
+  const check = new Check(definition, () => {
     updates += 1;
   });
   assert.equal(check.markFailed(1, "boom"), true);
@@ -29,7 +29,7 @@ test("does not override a terminal status when marking passed", () => {
 });
 
 test("deduplicates identical output", () => {
-  const check = new Check(definition, Date.now());
+  const check = new Check(definition);
 
   assert.equal(check.setOutput("hello"), true);
   assert.equal(check.setOutput("hello"), false);
@@ -38,7 +38,7 @@ test("deduplicates identical output", () => {
 });
 
 test("updates output when content changes", () => {
-  const check = new Check(definition, Date.now());
+  const check = new Check(definition);
 
   assert.equal(check.setOutput("first"), true);
   assert.equal(check.output, "first");
@@ -49,7 +49,7 @@ test("updates output when content changes", () => {
 
 test("notifies listeners on output update", () => {
   let updates = 0;
-  const check = new Check(definition, Date.now(), () => {
+  const check = new Check(definition, () => {
     updates += 1;
   });
 

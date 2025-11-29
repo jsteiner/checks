@@ -22,6 +22,7 @@ test("shows a project summary in the header", () => {
       checks: [check],
       summary: {
         total: 1,
+        pending: 0,
         passed: 1,
         failed: 0,
         aborted: 0,
@@ -70,6 +71,7 @@ test("shows a status breakdown when any check fails", () => {
       ],
       summary: {
         total: 2,
+        pending: 0,
         passed: 1,
         failed: 1,
         aborted: 0,
@@ -137,6 +139,7 @@ test("renders multiple projects with sequential check indexes", () => {
       checks: [first],
       summary: {
         total: 1,
+        pending: 0,
         passed: 1,
         failed: 0,
         aborted: 0,
@@ -151,6 +154,7 @@ test("renders multiple projects with sequential check indexes", () => {
       checks: [second, third],
       summary: {
         total: 2,
+        pending: 0,
         passed: 2,
         failed: 0,
         aborted: 0,

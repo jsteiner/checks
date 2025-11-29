@@ -16,17 +16,13 @@ export class Project {
     this.emit();
   };
 
-  constructor(
-    project: ProjectDefinition,
-    projectIndex: number,
-    startedAt: number,
-  ) {
+  constructor(project: ProjectDefinition, projectIndex: number) {
     this.project = project.project;
     this.path = project.path;
     this.index = projectIndex;
     this.color = project.color;
     this.checks = project.checks.map(
-      (definition) => new Check(definition, startedAt, this.handleCheckUpdate),
+      (definition) => new Check(definition, this.handleCheckUpdate),
     );
   }
 

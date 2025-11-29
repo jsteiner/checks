@@ -5,7 +5,12 @@ export function formatDuration(ms: number) {
 }
 
 export function formatCheckDurationLabel(check: CheckState): string | null {
-  if (check.result.status === "running") return null;
+  if (check.result.status === "pending" || check.result.status === "running") {
+    return null;
+  }
+  if (check.startedAt === null) {
+    return null;
+  }
   const durationMs = Math.max(0, check.result.finishedAt - check.startedAt);
   return formatDuration(durationMs);
 }

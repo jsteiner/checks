@@ -31,10 +31,10 @@ function expectFailed(result: CheckResult) {
 }
 
 test("tracks status transitions", () => {
-  const store = new Project(SAMPLE_PROJECT, 0, 0);
+  const store = new Project(SAMPLE_PROJECT, 0);
   const first = store.getCheck(0);
   const second = store.getCheck(1);
-  assert.equal(first.result.status, "running");
+  assert.equal(first.result.status, "pending");
 
   assert.equal(first.markPassed(0), true);
   const success = expectPassed(first.result);
@@ -52,8 +52,10 @@ test("tracks status transitions", () => {
 });
 
 test("summarizes run results", () => {
-  const store = new Project(SAMPLE_PROJECT, 0, Date.now() - 500);
+  const store = new Project(SAMPLE_PROJECT, 0);
+  store.getCheck(0).markRunning();
   store.getCheck(0).markPassed(0);
+  store.getCheck(1).markRunning();
   store.getCheck(1).markFailed(1, null);
 
   const summary = store.toState().summary;
@@ -71,7 +73,10 @@ test("summary duration reflects last finished check time", () => {
   Date.now = () => fakeNow;
 
   try {
-    const store = new Project(SAMPLE_PROJECT, 0, fakeNow);
+    const store = new Project(SAMPLE_PROJECT, 0);
+    store.getCheck(0).markRunning();
+    store.getCheck(1).markRunning();
+
     fakeNow = 125;
     store.getCheck(0).markPassed(0);
 
@@ -88,7 +93,7 @@ test("summary duration reflects last finished check time", () => {
 });
 
 test("waitForCompletion resolves when all checks finish", async () => {
-  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0);
   const waitPromise = store.waitForCompletion();
   let resolved = false;
   void waitPromise.then(() => {
@@ -107,7 +112,7 @@ test("waitForCompletion resolves when all checks finish", async () => {
 });
 
 test("waitForCompletion resolves immediately when already complete", async () => {
-  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0);
   store.getCheck(0).markPassed(0);
   store.getCheck(1).markFailed(1, null);
 
@@ -117,7 +122,7 @@ test("waitForCompletion resolves immediately when already complete", async () =>
 });
 
 test("does not emit when attempting to update a terminal check", () => {
-  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0);
   let updates = 0;
   const unsubscribe = store.subscribe(() => {
     updates += 1;
@@ -134,7 +139,7 @@ test("does not emit when attempting to update a terminal check", () => {
 });
 
 test("throws when requesting an unknown check index", () => {
-  const store = new Project(SAMPLE_PROJECT, 0, Date.now());
+  const store = new Project(SAMPLE_PROJECT, 0);
   assert.throws(() => {
     store.getCheck(99);
   });
