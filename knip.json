@@ -9,5 +9,6 @@
     "src/**/*.{ts,tsx}",
     "scripts/**/*.ts"
   ],
-  "treatConfigHintsAsErrors": true
+  "treatConfigHintsAsErrors": true,
+  "ignoreDependencies": ["node-gyp"]
 }

@@ -26,6 +26,7 @@
     "@types/react-test-renderer": "^19.1.0",
     "ink-testing-library": "^4.0.0",
     "knip": "^5.70.2",
+    "node-gyp": "^12.1.0",
     "react-test-renderer": "19.2.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
@@ -33,7 +34,7 @@
   "dependencies": {
     "commander": "^14.0.2",
     "ink": "^6.5.1",
-    "node-pty": "^1.0.0",
+    "node-pty": "1.0.0",
     "react": "^19.2.0",
     "zod": "^4.1.12"
   },

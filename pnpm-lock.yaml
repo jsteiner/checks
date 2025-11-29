@@ -15,7 +15,7 @@ importers:
         specifier: ^6.5.1
         version: 6.5.1(@types/react@19.2.6)(react@19.2.0)
       node-pty:
-        specifier: ^1.0.0
+        specifier: 1.0.0
         version: 1.0.0
       react:
         specifier: ^19.2.0
@@ -789,8 +789,8 @@ packages:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
 
-  proc-log@6.0.0:
-    resolution: {integrity: sha512-KG/XsTDN901PNfPfAMmj6N/Ywg9tM+bHK8pAz+27fS4N4Pcr+4zoYBOcGSBu6ceXYNPxkLpa4ohtfxV1XcLAfA==}
+  proc-log@6.1.0:
+    resolution: {integrity: sha512-iG+GYldRf2BQ0UDUAd6JQ/RwzaQy6mXmsk/IzlYyal4A4SNFw54MeH4/tLkF4I5WoWG9SQwuqWzS99jaFQHBuQ==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
   promise-retry@2.0.1:
@@ -1509,7 +1509,7 @@ snapshots:
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
       negotiator: 1.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       promise-retry: 2.0.1
       ssri: 13.0.0
     transitivePeerDependencies:
@@ -1577,7 +1577,7 @@ snapshots:
       graceful-fs: 4.2.11
       make-fetch-happen: 15.0.3
       nopt: 9.0.0
-      proc-log: 6.0.0
+      proc-log: 6.1.0
       semver: 7.7.3
       tar: 7.5.2
       tinyglobby: 0.2.15
@@ -1634,7 +1634,7 @@ snapshots:
 
   picomatch@4.0.3: {}
 
-  proc-log@6.0.0: {}
+  proc-log@6.1.0: {}
 
   promise-retry@2.0.1:
     dependencies:
