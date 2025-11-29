@@ -35,7 +35,7 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   useAbortExit({ abortSignal, exit, interactive, isComplete });
 
   return (
-    <LayoutProvider checks={checks}>
+    <LayoutProvider checks={checks} projects={projects}>
       {focusedCheck ? (
         <WithDividers>
           <Check

@@ -10,11 +10,11 @@ interface ProjectProps {
   marginTop?: number;
 }
 
-export function Project({ project, startIndex, marginTop = 0 }: ProjectProps) {
+export function Project({ project, startIndex }: ProjectProps) {
   let checkIndex = startIndex;
 
   return (
-    <Box flexDirection="column" marginTop={marginTop} gap={1}>
+    <Box flexDirection="column" gap={1}>
       {project.checks.map((check) => {
         const index = checkIndex;
         checkIndex += 1;
@@ -32,8 +32,6 @@ export function Project({ project, startIndex, marginTop = 0 }: ProjectProps) {
           </React.Fragment>
         );
       })}
-
-      <Divider />
     </Box>
   );
 }

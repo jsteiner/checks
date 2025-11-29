@@ -1,4 +1,9 @@
-import type { CheckResult, CheckState } from "../../types.js";
+import type {
+  CheckResult,
+  CheckState,
+  ProjectState,
+  Summary,
+} from "../../types.js";
 
 interface CreateCheckOptions {
   status: CheckResult["status"];
@@ -48,5 +53,37 @@ export function createCheck({
     startedAt,
     output,
     result,
+  };
+}
+
+interface CreateProjectOptions {
+  project?: string;
+  path?: string;
+  checks?: CheckState[];
+  isComplete?: boolean;
+}
+
+export function createProject({
+  project = "test",
+  path = "/test",
+  checks = [],
+  isComplete = false,
+}: CreateProjectOptions = {}): ProjectState {
+  const summary: Summary = {
+    total: checks.length,
+    pending: checks.filter((c) => c.result.status === "pending").length,
+    passed: checks.filter((c) => c.result.status === "passed").length,
+    failed: checks.filter((c) => c.result.status === "failed").length,
+    aborted: checks.filter((c) => c.result.status === "aborted").length,
+    durationMs: 0,
+  };
+
+  return {
+    project,
+    path,
+    color: "white",
+    checks,
+    summary,
+    isComplete,
   };
 }
