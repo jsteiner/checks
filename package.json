@@ -42,6 +42,7 @@
     "zod": "^4.1.12"
   },
   "files": [
-    "dist"
+    "dist",
+    "checks.config.schema.json"
   ]
 }

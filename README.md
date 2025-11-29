@@ -10,6 +10,7 @@ Example `checks.config.json`:
 
 ```jsonc
 {
+  "$schema": "./node_modules/checks/checks.config.schema.json",
   "project": "web",
   "color": "cyan", // optional
   "checks": [
