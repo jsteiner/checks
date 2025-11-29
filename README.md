@@ -1,6 +1,12 @@
 # checks - local CI for humans and agents
 
-Run tests and static analysis in parallel with focused, token efficient, output.
+Run tests and static analysis in parallel with human friendly and token efficient output.
+
+To break that down:
+
+* **Parallel**: Parallelize command execution across one _or more_ projects in a single run. Great for monorepos.
+* **Human friendly**: Outputs cleanly, even when running nested suites in parallel. This can be a problem with homespun solutions.
+* **Token efficient**: Only failed checks show their output by default. Depending on the verbosity of successful checks, this may save a lot of tokens when run through coding agents. `checks` own suite goes from 3,758 tokens to 153 (though we run a verbose test reporter for esoteric reasons).
 
 ## Configuration
 
