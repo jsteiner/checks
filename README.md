@@ -46,6 +46,13 @@ Fail fast:
 checks --fail-fast
 ```
 
+Control concurrency (defaults to 75% of available CPUs):
+
+```bash
+checks --concurrency 4    # run at most 4 checks in parallel
+checks --concurrency Infinity  # does not cap concurrency
+```
+
 Filter with `--only`:
 
 ```bash
@@ -77,6 +84,7 @@ checks --recursive --only "web*/lint" # use the same pattern rules as above to m
 | `-i, --interactive` | Keeps the TUI open and enables keyboard controls for focusing specific checks. Non-interactive mode exits as soon as the suite finishes. | off |
 | `-f, --fail-fast` | Aborts the remaining checks after the first failure. | off |
 | `-r, --recursive` | Search for every `checks.config.json` under the current directory (skipping `node_modules` and `.git`). | off |
+| `-c, --concurrency <number>` | Maximum number of checks to run concurrently. Set to `Infinity` for no artificial cap. | 75% of CPUs |
 | `-o, --only <pattern...>` | Include only checks matching one or more patterns. Patterns may be `check`, `project/check`, `project/` or `**` and support a trailing `*` for prefix matches. Example: `--only lint --only api/*`. | — |
 | `-e, --exclude <pattern...>` | Remove checks matching any pattern (same syntax as `--only`). Overrides `--only` when in conflict. | — |
 | `-h, --help` | Show the built-in help. | — |

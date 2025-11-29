@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { Command } from "commander";
 
 export type CheckFilterRule = {
@@ -11,6 +12,10 @@ export interface CLIOptions {
   recursive: boolean;
   concurrency: number;
   filters: CheckFilterRule[];
+}
+
+function getDefaultConcurrency(): number {
+  return Math.max(1, Math.floor(availableParallelism() * 0.75));
 }
 
 export function parseCLIOptions(argv: string[]): CLIOptions {
@@ -42,8 +47,8 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     )
     .option(
       "-c, --concurrency <number>",
-      "maximum number of checks to run concurrently",
-      "Infinity",
+      "maximum number of checks to run concurrently (default: 75% of CPUs)",
+      String(getDefaultConcurrency()),
     );
 
   program.parse(argv);
