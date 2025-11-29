@@ -1,0 +1,7 @@
+{
+	"$schema": "../checks.config.schema.json",
+	"project": "recursive",
+	"checks": [
+		{ "name": "echo", "command": "echo 'it works'" }
+	]
+}
