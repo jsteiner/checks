@@ -3,11 +3,7 @@ import type { ProjectDefinition, SuiteDefinition } from "../types.js";
 import { filterProjectsByRules } from "./checkFilters.js";
 import { type CLIOptions, parseCLIOptions } from "./cli.js";
 import { discoverConfigPaths } from "./discoverConfigPaths.js";
-import {
-  FILE_CONFIG_PATH,
-  FileConfigError,
-  loadFileConfig,
-} from "./fileConfig.js";
+import { FileConfigError, loadFileConfig } from "./fileConfig.js";
 import { getProjectColor } from "./projectColors.js";
 
 export interface Input extends SuiteDefinition {
@@ -16,11 +12,15 @@ export interface Input extends SuiteDefinition {
 }
 
 export async function buildInput(
-  configPath: string = FILE_CONFIG_PATH,
   argv: string[] = process.argv,
 ): Promise<Input> {
   const options = parseCLIOptions(argv);
-  const paths = await discoverConfigPaths(configPath, options.recursive);
+
+  const paths = await discoverConfigPaths(
+    options.directory,
+    options.configFileName,
+    options.recursive,
+  );
   const projectsFromConfig: ProjectDefinition[] = await Promise.all(
     paths.map(async (configFilePath, index) => {
       const config = await loadFileConfig(configFilePath);

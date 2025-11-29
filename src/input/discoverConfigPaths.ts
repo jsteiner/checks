@@ -3,27 +3,29 @@ import path from "node:path";
 import { FileConfigError } from "./fileConfig.js";
 
 export async function discoverConfigPaths(
-  configPath: string,
+  directory: string,
+  configFileName: string,
   recursive: boolean,
 ): Promise<string[]> {
+  const resolvedDir = path.resolve(directory);
+  const configPath = path.join(resolvedDir, configFileName);
+
   if (!recursive) {
     return [configPath];
   }
 
-  const baseDir = path.dirname(configPath);
-  const fileName = path.basename(configPath);
   const skippedDirs = new Set(["node_modules", ".git"]);
 
   const matches: string[] = [];
-  await walkForConfigs(baseDir, {
-    fileName,
+  await walkForConfigs(resolvedDir, {
+    fileName: configFileName,
     skippedDirs,
     matches,
   });
 
   if (matches.length === 0) {
     throw new FileConfigError(
-      `No config files named ${fileName} found under ${baseDir}`,
+      `No config files named ${configFileName} found under ${resolvedDir}`,
     );
   }
 

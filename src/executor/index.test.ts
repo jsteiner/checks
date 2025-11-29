@@ -29,6 +29,8 @@ async function executeChecks(
       recursive: false,
       concurrency: Number.POSITIVE_INFINITY,
       filters: [],
+      directory: ".",
+      configFileName: "checks.config.json",
       ...options,
     },
   };

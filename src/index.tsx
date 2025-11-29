@@ -8,7 +8,7 @@ import { render } from "ink";
 import React from "react";
 import { Executor } from "./executor/index.js";
 import { getTerminalDimensions } from "./executor/terminalConfig.js";
-import { FILE_CONFIG_PATH, FileConfigError } from "./input/fileConfig.js";
+import { FileConfigError } from "./input/fileConfig.js";
 import { buildInput, type Input } from "./input/index.js";
 import { Suite } from "./state/Suite.js";
 import type { TerminalDimensions } from "./types.js";
@@ -45,7 +45,6 @@ const defaultDeps: Required<RunnerDeps> = {
 };
 
 export async function runChecks(
-  configPath: string = FILE_CONFIG_PATH,
   argv: string[] = process.argv,
   deps: RunnerDeps = {},
 ): Promise<number> {
@@ -56,7 +55,7 @@ export async function runChecks(
 
   let input: Input;
   try {
-    input = await buildInput(configPath, argv);
+    input = await buildInput(argv);
   } catch (error) {
     const message =
       error instanceof FileConfigError || error instanceof Error
@@ -111,11 +110,8 @@ export async function runChecks(
   return EXIT_CODES.success;
 }
 
-async function main(
-  configPath: string = FILE_CONFIG_PATH,
-  argv: string[] = process.argv,
-) {
-  const exitCode = await runChecks(configPath, argv);
+async function main(argv: string[] = process.argv) {
+  const exitCode = await runChecks(argv);
   exitWithNewline(exitCode);
 }
 

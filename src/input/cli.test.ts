@@ -24,6 +24,8 @@ test("parses filters in argv order and trims patterns", () => {
     recursive: false,
     failFast: false,
     concurrency: DEFAULT_CONCURRENCY,
+    directory: ".",
+    configFileName: "checks.config.json",
     filters: [
       { type: "only", pattern: "lint" },
       { type: "only", pattern: "web/typecheck" },
@@ -107,4 +109,35 @@ test("throws for invalid concurrency values", () => {
         '--concurrency must be a positive integer or "Infinity", got: -5',
     },
   );
+});
+
+test("parses directory argument", () => {
+  const options = parseCLIOptions([
+    "/usr/bin/node",
+    "/tmp/checks",
+    "/some/directory",
+  ]);
+
+  assert.equal(options.directory, "/some/directory");
+});
+
+test("directory defaults to '.' when not specified", () => {
+  const options = parseCLIOptions(["/usr/bin/node", "/tmp/checks"]);
+
+  assert.equal(options.directory, ".");
+});
+
+test("parses directory with flags", () => {
+  const options = parseCLIOptions([
+    "/usr/bin/node",
+    "/tmp/checks",
+    "/some/directory",
+    "--recursive",
+    "--only",
+    "lint",
+  ]);
+
+  assert.equal(options.directory, "/some/directory");
+  assert.equal(options.recursive, true);
+  assert.deepEqual(options.filters, [{ type: "only", pattern: "lint" }]);
 });

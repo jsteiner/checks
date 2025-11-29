@@ -1,11 +1,5 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
-
-export const FILE_CONFIG_PATH = path.resolve(
-  process.cwd(),
-  "checks.config.json",
-);
 
 const checkSchema = z.object({
   name: z.string().trim().min(1, "name is required"),

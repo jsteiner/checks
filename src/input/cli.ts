@@ -12,6 +12,8 @@ export interface CLIOptions {
   recursive: boolean;
   concurrency: number;
   filters: CheckFilterRule[];
+  directory: string;
+  configFileName: string;
 }
 
 function getDefaultConcurrency(): number {
@@ -23,6 +25,10 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
 
   program
     .name("checks")
+    .argument(
+      "[directory]",
+      "directory to run checks from (default: current directory)",
+    )
     .helpOption("-h, --help", "display this help message")
     .option("-i, --interactive", "run in interactive mode", false)
     .option(
@@ -68,8 +74,15 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
   }>();
 
   const concurrency = parseConcurrency(concurrencyStr);
+  const [directory = "."] = program.args;
 
-  return { ...base, concurrency, filters: toFilterRules(only, exclude) };
+  return {
+    ...base,
+    concurrency,
+    filters: toFilterRules(only, exclude),
+    directory,
+    configFileName: "checks.config.json",
+  };
 }
 
 function parseConcurrency(value: string): number {

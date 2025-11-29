@@ -41,6 +41,8 @@ test("runs commands in parallel and renders updates", async () => {
       recursive: false,
       concurrency: Number.POSITIVE_INFINITY,
       filters: [],
+      directory: ".",
+      configFileName: "checks.config.json",
     },
   };
   const ink = render(

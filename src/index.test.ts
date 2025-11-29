@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import test from "node:test";
 import type { ReactElement } from "react";
 import { EXIT_CODES, runChecks } from "./index.js";
@@ -15,11 +16,11 @@ test("surfaces invalid glob errors to the user", async () => {
     project: "project",
     checks: [{ name: "lint", command: "echo lint" }],
   });
+  const configDir = path.dirname(configPath);
 
   const errors: string[] = [];
   const exitCode = await runChecks(
-    configPath,
-    ["node", "checks", "--only", "li*:deep"],
+    ["node", "checks", configDir, "--only", "li*:deep"],
     {
       renderApp: renderStub as unknown as InkRender,
       createExecutor: () => ({ run: async () => {} }),
@@ -41,9 +42,10 @@ test("notifies when no checks are defined", async () => {
     project: "project",
     checks: [],
   });
+  const configDir = path.dirname(configPath);
 
   const errors: string[] = [];
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderStub as unknown as InkRender,
     createExecutor: () => ({ run: async () => {} }),
     logError: (message) => errors.push(message),
@@ -58,11 +60,11 @@ test("notifies when filters exclude all checks", async () => {
     project: "project",
     checks: [{ name: "lint", command: "echo lint" }],
   });
+  const configDir = path.dirname(configPath);
 
   const errors: string[] = [];
   const exitCode = await runChecks(
-    configPath,
-    ["node", "checks", "--only", "missing"],
+    ["node", "checks", configDir, "--only", "missing"],
     {
       renderApp: renderStub as unknown as InkRender,
       createExecutor: () => ({ run: async () => {} }),
@@ -84,8 +86,9 @@ test("runs checks successfully and exits with success code", async () => {
       },
     ],
   });
+  const configDir = path.dirname(configPath);
 
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderStub as unknown as InkRender,
     createExecutor: (_input, store) => ({
       run: async () => {
@@ -107,8 +110,9 @@ test("exits with checks failed code when a check fails", async () => {
       },
     ],
   });
+  const configDir = path.dirname(configPath);
 
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderStub as unknown as InkRender,
     createExecutor: (_input, store) => ({
       run: async () => {
@@ -130,6 +134,7 @@ test("exits with aborted code when receiving SIGINT", async () => {
       },
     ],
   });
+  const configDir = path.dirname(configPath);
 
   const renderWithAbort: InkRender = (element) => {
     const props = (element as ReactElement<{ onAbort: () => void }>).props;
@@ -138,7 +143,7 @@ test("exits with aborted code when receiving SIGINT", async () => {
     return renderStub() as never;
   };
 
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderWithAbort,
     createExecutor: (_input, store) => ({
       run: async () => {
@@ -155,6 +160,7 @@ test("exits with aborted code when signal is aborted but checks are not marked a
     project: "project",
     checks: [{ name: "test", command: "echo test" }],
   });
+  const configDir = path.dirname(configPath);
 
   const renderWithAbort: InkRender = (element) => {
     const props = (element as ReactElement<{ onAbort: () => void }>).props;
@@ -162,7 +168,7 @@ test("exits with aborted code when signal is aborted but checks are not marked a
     return renderStub() as never;
   };
 
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderWithAbort,
     createExecutor: (_input, store) => ({
       run: async () => {
@@ -184,9 +190,10 @@ test("logs runtime errors and exits with orchestrator error", async () => {
       },
     ],
   });
+  const configDir = path.dirname(configPath);
 
   const errors: string[] = [];
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderStub as unknown as InkRender,
     createExecutor: () => ({
       run: async () => {
@@ -208,8 +215,9 @@ test("returns failed exit code when any check fails even if others pass", async 
       { name: "fail", command: "echo fail" },
     ],
   });
+  const configDir = path.dirname(configPath);
 
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderStub as unknown as InkRender,
     createExecutor: (_input, store) => ({
       run: async () => {
@@ -227,9 +235,10 @@ test("handles non-Error exceptions during runtime", async () => {
     project: "project",
     checks: [{ name: "lint", command: "echo ok" }],
   });
+  const configDir = path.dirname(configPath);
 
   const errors: string[] = [];
-  const exitCode = await runChecks(configPath, ["node", "checks"], {
+  const exitCode = await runChecks(["node", "checks", configDir], {
     renderApp: renderStub as unknown as InkRender,
     createExecutor: () => ({
       run: async () => {
@@ -245,15 +254,11 @@ test("handles non-Error exceptions during runtime", async () => {
 
 test("handles non-Error exceptions during config loading", async () => {
   const errors: string[] = [];
-  const exitCode = await runChecks(
-    "/non/existent/path.json",
-    ["node", "checks"],
-    {
-      renderApp: renderStub as unknown as InkRender,
-      createExecutor: () => ({ run: async () => {} }),
-      logError: (message) => errors.push(message),
-    },
-  );
+  const exitCode = await runChecks(["node", "checks", "/non/existent/path"], {
+    renderApp: renderStub as unknown as InkRender,
+    createExecutor: () => ({ run: async () => {} }),
+    logError: (message) => errors.push(message),
+  });
 
   assert.equal(exitCode, EXIT_CODES.orchestratorError);
   assert.ok(errors.length > 0);

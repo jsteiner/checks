@@ -8,8 +8,10 @@ import { discoverConfigPaths } from "./discoverConfigPaths.js";
 
 test("returns provided path when recursion is disabled", async () => {
   const configPath = await createConfigFile({ project: "solo", checks: [] });
+  const directory = path.dirname(configPath);
+  const fileName = path.basename(configPath);
 
-  const paths = await discoverConfigPaths(configPath, false);
+  const paths = await discoverConfigPaths(directory, fileName, false);
 
   assert.deepEqual(paths, [configPath]);
 });
@@ -40,17 +42,16 @@ test("recursively discovers configs when requested", async () => {
     "utf8",
   );
 
-  const paths = await discoverConfigPaths(rootConfigPath, true);
+  const paths = await discoverConfigPaths(baseDir, "checks.config.json", true);
 
   assert.deepEqual(paths, [rootConfigPath, nestedConfigPath]);
 });
 
 test("throws when recursive search finds no configs", async () => {
   const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "discover-paths-"));
-  const configPath = path.join(baseDir, "missing.json");
 
   await assert.rejects(
-    () => discoverConfigPaths(configPath, true),
+    () => discoverConfigPaths(baseDir, "missing.json", true),
     /No config files named/,
   );
 });
@@ -84,7 +85,7 @@ test("skips symlinks and ignored directories when searching recursively", async 
   const symlinkPath = path.join(baseDir, "checks.config.json");
   await fs.symlink(configPath, symlinkPath);
 
-  const paths = await discoverConfigPaths(symlinkPath, true);
+  const paths = await discoverConfigPaths(baseDir, "checks.config.json", true);
 
   assert.deepEqual(paths, [configPath]);
 });
