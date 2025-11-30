@@ -28,7 +28,6 @@
     "ink-testing-library": "^4.0.0",
     "jscpd": "^4.0.5",
     "knip": "^5.70.2",
-    "node-gyp": "^12.1.0",
     "react-test-renderer": "19.2.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
@@ -38,6 +37,7 @@
     "@xterm/headless": "^5.5.0",
     "commander": "^14.0.2",
     "ink": "^6.5.1",
+    "node-gyp": "^12.1.0",
     "node-pty": "1.0.0",
     "p-limit": "^7.2.0",
     "react": "^19.2.0",

@@ -20,6 +20,9 @@ importers:
       ink:
         specifier: ^6.5.1
         version: 6.5.1(@types/react@19.2.6)(react@19.2.0)
+      node-gyp:
+        specifier: ^12.1.0
+        version: 12.1.0
       node-pty:
         specifier: 1.0.0
         version: 1.0.0
@@ -54,9 +57,6 @@ importers:
       knip:
         specifier: ^5.70.2
         version: 5.70.2(@types/node@24.10.1)(typescript@5.9.3)
-      node-gyp:
-        specifier: ^12.1.0
-        version: 12.1.0
       react-test-renderer:
         specifier: 19.2.0
         version: 19.2.0(react@19.2.0)
