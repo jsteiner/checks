@@ -8,6 +8,8 @@ To break that down:
 * **Human friendly**: Outputs cleanly, even when running nested suites in parallel. This can be a problem with homespun solutions.
 * **Token efficient**: Only failed checks show their output by default. Depending on the verbosity of successful checks, this may save a lot of tokens when run through coding agents. `checks` own suite goes from 3,758 tokens to 153 (though we run a verbose test reporter for esoteric reasons).
 
+![](media/screenshot.png)
+
 ## Configuration
 
 `checks` looks for `checks.config.json` in the current working directory. When `--recursive` is set it searches subdirectories recursively, and each project's commands run from the directory where its config file lives.
