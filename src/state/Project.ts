@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import type { ProjectColor } from "../input/projectColors.js";
 import type { ProjectDefinition, ProjectState, Summary } from "../types.js";
 import { Check } from "./Check.js";
+import { createWaitForCompletion } from "./eventEmitterHelper.js";
 import { combineSummaries } from "./summary.js";
 
 export class Project {
@@ -24,6 +25,10 @@ export class Project {
     this.checks = project.checks.map(
       (definition) => new Check(definition, this.handleCheckUpdate),
     );
+    this.waitForCompletion = createWaitForCompletion(
+      this.emitter,
+      this.isComplete.bind(this),
+    );
   }
 
   subscribe = (listener: () => void) => {
@@ -43,21 +48,7 @@ export class Project {
     return combineSummaries(this.checks.map((check) => check.summary()));
   }
 
-  waitForCompletion(): Promise<void> {
-    if (this.isComplete()) {
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve) => {
-      const listener = () => {
-        if (!this.isComplete()) return;
-        this.emitter.off("update", listener);
-        resolve();
-      };
-
-      this.emitter.on("update", listener);
-    });
-  }
+  waitForCompletion: () => Promise<void>;
 
   toState(): ProjectState {
     return {

@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import type { ReactElement } from "react";
-import { stripAnsi } from "../../test/helpers/ui.js";
+import { renderWithLayout, stripAnsi } from "../../test/helpers/ui.jsx";
 import type { CheckState, ProjectState } from "../../types.js";
 import { LayoutProvider } from "../LayoutContext.js";
 import { CheckHeader } from "./CheckHeader.js";
@@ -138,28 +137,3 @@ test("pads project/name combinations so commands align", () => {
   assert.notEqual(firstCommandIndex, -1);
   assert.equal(firstCommandIndex, secondCommandIndex);
 });
-
-function renderWithLayout(element: ReactElement, checks: CheckState[]) {
-  const projects = [
-    {
-      project: "test",
-      path: "/test",
-      color: "white" as const,
-      checks,
-      summary: {
-        total: 0,
-        pending: 0,
-        passed: 0,
-        failed: 0,
-        aborted: 0,
-        durationMs: 0,
-      },
-      isComplete: false,
-    },
-  ];
-  return render(
-    <LayoutProvider checks={checks} projects={projects}>
-      {element}
-    </LayoutProvider>,
-  );
-}

@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import type { render } from "ink-testing-library";
+import { render } from "ink-testing-library";
+import type { ReactElement } from "react";
+import type { CheckState } from "../../types.js";
+import { LayoutProvider } from "../../ui/LayoutContext.js";
 
 type InkInstance = ReturnType<typeof render>;
 
@@ -37,4 +40,29 @@ export async function waitForFrameMatch(
 
 export function stripAnsi(value: string): string {
   return value.replace(/\u001B\[[0-9;]*m/g, "");
+}
+
+export function renderWithLayout(element: ReactElement, checks: CheckState[]) {
+  const projects = [
+    {
+      project: "test",
+      path: "/test",
+      color: "white" as const,
+      checks,
+      summary: {
+        total: 0,
+        pending: 0,
+        passed: 0,
+        failed: 0,
+        aborted: 0,
+        durationMs: 0,
+      },
+      isComplete: false,
+    },
+  ];
+  return render(
+    <LayoutProvider checks={checks} projects={projects}>
+      {element}
+    </LayoutProvider>,
+  );
 }

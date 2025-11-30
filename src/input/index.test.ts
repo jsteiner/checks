@@ -1,10 +1,32 @@
 import assert from "node:assert/strict";
-import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createConfigFile } from "../test/helpers/configFile.js";
+import {
+  createConfigFile,
+  createNestedConfigDirs,
+  setupSymlinkAndIgnoredDirs,
+  writeConfigFiles,
+} from "../test/helpers/configFile.js";
 import { buildInput } from "./index.js";
+
+async function buildRecursiveInput() {
+  const setup = await createNestedConfigDirs();
+  await writeConfigFiles(setup);
+
+  const input = await buildInput([
+    "node",
+    "checks",
+    setup.baseDir,
+    "--recursive",
+  ]);
+
+  return {
+    input,
+    setup,
+    names: input.projects.map((config) => config.project),
+    paths: input.projects.map((config) => config.path),
+  };
+}
 
 test("builds config and CLI options", async () => {
   const configPath = await createConfigFile({
@@ -36,107 +58,56 @@ test("builds config and CLI options", async () => {
 });
 
 test("recursively discovers configs when requested", async () => {
-  const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "checks-input-"));
-  const nestedDir = path.join(baseDir, "nested");
-  await fs.mkdir(nestedDir);
+  const { input, setup, names, paths } = await buildRecursiveInput();
 
-  const rootConfigPath = path.join(baseDir, "checks.config.json");
-  const nestedConfigPath = path.join(nestedDir, "checks.config.json");
-
-  await fs.writeFile(
-    rootConfigPath,
-    JSON.stringify({
-      project: "root",
-      checks: [{ name: "alpha", command: "echo alpha" }],
-    }),
-    "utf8",
-  );
-
-  await fs.writeFile(
-    nestedConfigPath,
-    JSON.stringify({
-      project: "nested",
-      checks: [{ name: "beta", command: "echo beta" }],
-    }),
-    "utf8",
-  );
-
-  const input = await buildInput(["node", "checks", baseDir, "--recursive"]);
-
-  const names = input.projects.map((config) => config.project);
-  const paths = input.projects.map((config) => config.path);
   const workingDirs = input.projects.map((config) => config.checks[0]?.cwd);
 
   assert.deepEqual(names, ["root", "nested"]);
-  assert.deepEqual(paths, [rootConfigPath, nestedConfigPath]);
-  assert.deepEqual(workingDirs, [baseDir, nestedDir]);
+  assert.deepEqual(paths, [setup.rootConfigPath, setup.nestedConfigPath]);
+  assert.deepEqual(workingDirs, [setup.baseDir, setup.nestedDir]);
 });
 
 test("throws when recursive search finds no configs", async () => {
-  const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "checks-input-"));
+  const setup = await createNestedConfigDirs();
 
   await assert.rejects(
     () =>
-      buildInput(["node", "checks", baseDir, "--recursive"]).catch((error) => {
-        assert.match(
-          error instanceof Error ? error.message : "",
-          /No config files named/,
-        );
-        throw error;
-      }),
+      buildInput(["node", "checks", setup.baseDir, "--recursive"]).catch(
+        (error) => {
+          assert.match(
+            error instanceof Error ? error.message : "",
+            /No config files named/,
+          );
+          throw error;
+        },
+      ),
     /No config files named/,
   );
 });
 
 test("skips symlinks and ignored directories when searching recursively", async () => {
-  const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "checks-input-"));
-  const nestedDir = path.join(baseDir, "nested");
-  const nodeModulesDir = path.join(baseDir, "node_modules");
-  await Promise.all([fs.mkdir(nestedDir), fs.mkdir(nodeModulesDir)]);
+  const setup = await createNestedConfigDirs();
+  await setupSymlinkAndIgnoredDirs(setup);
 
-  const configPath = path.join(nestedDir, "checks.config.json");
-  await fs.writeFile(
-    configPath,
-    JSON.stringify({
-      project: "nested",
-      checks: [{ name: "alpha", command: "echo alpha" }],
-    }),
-    "utf8",
-  );
-
-  const ignoredPath = path.join(nodeModulesDir, "checks.config.json");
-  await fs.writeFile(
-    ignoredPath,
-    JSON.stringify({
-      project: "ignored",
-      checks: [{ name: "beta", command: "echo beta" }],
-    }),
-    "utf8",
-  );
-
-  const symlinkPath = path.join(baseDir, "checks.config.json");
-  await fs.symlink(configPath, symlinkPath);
-
-  const input = await buildInput(["node", "checks", baseDir, "--recursive"]);
+  const input = await buildInput([
+    "node",
+    "checks",
+    setup.baseDir,
+    "--recursive",
+  ]);
 
   assert.deepEqual(
     input.projects.map((config) => config.path),
-    [configPath],
+    [setup.nestedConfigPath],
   );
 });
 
 test("uses directory argument to resolve config path", async () => {
-  const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "checks-input-"));
-  const configPath = path.join(baseDir, "checks.config.json");
-
-  await fs.writeFile(
-    configPath,
-    JSON.stringify({
-      project: "test-project",
-      checks: [{ name: "lint", command: "echo lint" }],
-    }),
-    "utf8",
-  );
+  const configPath = await createConfigFile({
+    project: "test-project",
+    checks: [{ name: "lint", command: "echo lint" }],
+  });
+  const baseDir = path.dirname(configPath);
 
   const input = await buildInput(["node", "checks", baseDir]);
 
@@ -147,36 +118,8 @@ test("uses directory argument to resolve config path", async () => {
 });
 
 test("recursively discovers configs from specified directory", async () => {
-  const baseDir = await fs.mkdtemp(path.join(os.tmpdir(), "checks-input-"));
-  const nestedDir = path.join(baseDir, "nested");
-  await fs.mkdir(nestedDir);
-
-  const rootConfigPath = path.join(baseDir, "checks.config.json");
-  const nestedConfigPath = path.join(nestedDir, "checks.config.json");
-
-  await fs.writeFile(
-    rootConfigPath,
-    JSON.stringify({
-      project: "root",
-      checks: [{ name: "alpha", command: "echo alpha" }],
-    }),
-    "utf8",
-  );
-
-  await fs.writeFile(
-    nestedConfigPath,
-    JSON.stringify({
-      project: "nested",
-      checks: [{ name: "beta", command: "echo beta" }],
-    }),
-    "utf8",
-  );
-
-  const input = await buildInput(["node", "checks", baseDir, "--recursive"]);
-
-  const names = input.projects.map((config) => config.project);
-  const paths = input.projects.map((config) => config.path);
+  const { setup, names, paths } = await buildRecursiveInput();
 
   assert.deepEqual(names, ["root", "nested"]);
-  assert.deepEqual(paths, [rootConfigPath, nestedConfigPath]);
+  assert.deepEqual(paths, [setup.rootConfigPath, setup.nestedConfigPath]);
 });

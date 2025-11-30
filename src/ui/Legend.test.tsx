@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
-import { stripAnsi, waitFor, waitForFrameMatch } from "../test/helpers/ui.js";
+import { stripAnsi, waitFor, waitForFrameMatch } from "../test/helpers/ui.jsx";
 import { Legend } from "./Legend.js";
 
 test("renders focus and quit legend when not focused", async () => {

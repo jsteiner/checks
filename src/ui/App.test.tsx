@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { render } from "ink-testing-library";
 import { getProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
+import { renderApp } from "../test/helpers/app.jsx";
 import {
   stripAnsi,
   tick,
   waitFor,
   waitForFrameMatch,
-} from "../test/helpers/ui.js";
+} from "../test/helpers/ui.jsx";
 import { App } from "./App.js";
 
 const SAMPLE_CHECKS = [
@@ -24,15 +24,7 @@ const SAMPLE_PROJECT = {
 
 test("shows project header with a compact summary", async () => {
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
-  const controller = new AbortController();
-  const ink = render(
-    <App
-      store={store}
-      interactive={false}
-      abortSignal={controller.signal}
-      onAbort={() => controller.abort()}
-    />,
-  );
+  const { ink } = renderApp(App, store);
 
   store.getCheck(0, 0).markPassed(0);
   store.getCheck(0, 1).markPassed(0);
@@ -48,15 +40,7 @@ test("shows project header with a compact summary", async () => {
 
 test("shows interactive legend and focuses/unfocuses checks", async () => {
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
-  const controller = new AbortController();
-  const ink = render(
-    <App
-      store={store}
-      interactive
-      abortSignal={controller.signal}
-      onAbort={() => controller.abort()}
-    />,
-  );
+  const { ink } = renderApp(App, store, { interactive: true });
 
   store.getCheck(0, 0).setOutput("alpha");
   store.getCheck(0, 1).setOutput("bravo");
@@ -88,15 +72,7 @@ test("shows output for failed checks in the list view", async () => {
       },
     ],
   });
-  const controller = new AbortController();
-  const ink = render(
-    <App
-      store={store}
-      interactive
-      abortSignal={controller.signal}
-      onAbort={() => controller.abort()}
-    />,
-  );
+  const { ink } = renderApp(App, store, { interactive: true });
 
   const check = store.getCheck(0, 0);
   check.setOutput("problem");
@@ -110,20 +86,15 @@ test("shows output for failed checks in the list view", async () => {
 
 test("aborts when quitting while checks are running", async () => {
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
-  const controller = new AbortController();
   let aborted = false;
 
-  const ink = render(
-    <App
-      store={store}
-      interactive
-      abortSignal={controller.signal}
-      onAbort={() => {
-        aborted = true;
-        controller.abort();
-      }}
-    />,
-  );
+  const { ink, controller } = renderApp(App, store, {
+    interactive: true,
+    onAbort: () => {
+      aborted = true;
+      controller.abort();
+    },
+  });
 
   ink.stdin.write("q");
   await waitFor(() => aborted && controller.signal.aborted);
@@ -136,15 +107,7 @@ test("aborts when quitting while checks are running", async () => {
 
 test("ignores number keys outside the focusable range", async () => {
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
-  const controller = new AbortController();
-  const ink = render(
-    <App
-      store={store}
-      interactive
-      abortSignal={controller.signal}
-      onAbort={() => controller.abort()}
-    />,
-  );
+  const { ink } = renderApp(App, store, { interactive: true });
 
   ink.stdin.write("9");
   const frame = await waitForFrameMatch(ink, /<n> to focus/);
@@ -157,21 +120,9 @@ test("ignores number keys outside the focusable range", async () => {
 
 test("exits when the abort signal is already fired", async () => {
   const events: string[] = [];
-  const abortSignal = {
-    aborted: true,
-    addEventListener: () => events.push("add"),
-    removeEventListener: () => events.push("remove"),
-  } as unknown as AbortSignal;
 
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
-  const ink = render(
-    <App
-      store={store}
-      interactive={false}
-      abortSignal={abortSignal}
-      onAbort={() => {}}
-    />,
-  );
+  const { ink } = renderApp(App, store);
 
   await tick();
   assert.deepEqual(events, []);
@@ -184,19 +135,14 @@ test("does not abort when quitting after completion", async () => {
   store.getCheck(0, 1).markPassed(0);
 
   let abortCalled = false;
-  const controller = new AbortController();
 
-  const ink = render(
-    <App
-      store={store}
-      interactive
-      abortSignal={controller.signal}
-      onAbort={() => {
-        abortCalled = true;
-        controller.abort();
-      }}
-    />,
-  );
+  const { ink, controller } = renderApp(App, store, {
+    interactive: true,
+    onAbort: () => {
+      abortCalled = true;
+      controller.abort();
+    },
+  });
 
   ink.stdin.write("q");
   await tick();

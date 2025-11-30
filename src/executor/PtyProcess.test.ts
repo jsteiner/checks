@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { mock, test } from "node:test";
 import type { IPty } from "node-pty";
+import { createCloseEventPromise } from "../test/helpers/ptyProcess.js";
 import { PtyProcess } from "./PtyProcess.js";
 
 type StdoutStub = EventEmitter & {
@@ -141,12 +142,7 @@ test("spawns with provided env and process settings", async () => {
     output += chunk.toString();
   });
 
-  const closeEventPromise = new Promise<{
-    code: number | null;
-    signal: NodeJS.Signals | null;
-  }>((resolve) => {
-    child.on("close", (code, signal) => resolve({ code, signal }));
-  });
+  const closeEventPromise = createCloseEventPromise(child);
 
   fakePty.emitData("hello");
   fakePty.emitExit(0, null);
@@ -188,12 +184,7 @@ test("kills the process group when possible and records the signal", async () =>
     spawn: () => fakePty,
   }).spawn("noop", "/tmp/project");
 
-  const closeEventPromise = new Promise<{
-    code: number | null;
-    signal: NodeJS.Signals | null;
-  }>((resolve) =>
-    child.on("close", (code, signal) => resolve({ code, signal })),
-  );
+  const closeEventPromise = createCloseEventPromise(child);
 
   child.kill("SIGTERM");
   fakePty.emitExit(0, null);
@@ -282,12 +273,7 @@ test("handles null exitCode in close event", async () => {
     "/tmp/project",
   );
 
-  const closeEventPromise = new Promise<{
-    code: number | null;
-    signal: NodeJS.Signals | null;
-  }>((resolve) => {
-    child.on("close", (code, signal) => resolve({ code, signal }));
-  });
+  const closeEventPromise = createCloseEventPromise(child);
 
   fakePty.emitExit(null, null);
 
@@ -303,12 +289,7 @@ test("handles exit with signal code", async () => {
     "/tmp/project",
   );
 
-  const closeEventPromise = new Promise<{
-    code: number | null;
-    signal: NodeJS.Signals | null;
-  }>((resolve) => {
-    child.on("close", (code, signal) => resolve({ code, signal }));
-  });
+  const closeEventPromise = createCloseEventPromise(child);
 
   fakePty.emitExit(null, 15);
 
@@ -324,12 +305,7 @@ test("handles exit with undefined exitCode and signal", async () => {
     "/tmp/project",
   );
 
-  const closeEventPromise = new Promise<{
-    code: number | null;
-    signal: NodeJS.Signals | null;
-  }>((resolve) => {
-    child.on("close", (code, signal) => resolve({ code, signal }));
-  });
+  const closeEventPromise = createCloseEventPromise(child);
 
   fakePty.emitExit(undefined, undefined);
 

@@ -7,7 +7,7 @@ import type { Input } from "./input/index.js";
 import { getProjectColor } from "./input/projectColors.js";
 import { Suite } from "./state/Suite.js";
 import { DEFAULT_TEST_DIMENSIONS } from "./test/helpers/terminal.js";
-import { stripAnsi } from "./test/helpers/ui.js";
+import { stripAnsi } from "./test/helpers/ui.jsx";
 import { App } from "./ui/App.js";
 
 test("runs commands in parallel and renders updates", async () => {

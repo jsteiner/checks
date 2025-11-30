@@ -2,9 +2,25 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Text } from "ink";
 import { render } from "ink-testing-library";
+import type { ReactElement } from "react";
 import TestRenderer from "react-test-renderer";
-import { createCheck, createProject } from "../test/helpers/check.js";
+import { createCheck, createProject } from "../test/helpers/factories.js";
+import type { CheckState, ProjectState } from "../types.js";
 import { LayoutProvider, useLayout } from "./LayoutContext.js";
+
+function renderWithLayoutProvider(
+  checks: CheckState[],
+  projects: ProjectState[],
+  children: ReactElement,
+): string {
+  const { lastFrame } = render(
+    <LayoutProvider checks={checks} projects={projects}>
+      {children}
+    </LayoutProvider>,
+  );
+
+  return lastFrame() ?? "";
+}
 
 test("throws when useLayout is called outside of LayoutProvider", () => {
   const actEnv = globalThis as unknown as {
@@ -37,14 +53,10 @@ test("provides layout values inside the provider", () => {
     return <Text>{JSON.stringify(layout)}</Text>;
   };
 
-  const { lastFrame } = render(
-    <LayoutProvider checks={checks} projects={projects}>
-      <App />
-    </LayoutProvider>,
-  );
+  const lastFrame = renderWithLayoutProvider(checks, projects, <App />);
 
-  assert.match(lastFrame() ?? "", /"nameWidth":5/);
-  assert.match(lastFrame() ?? "", /"projectWidth":4/);
+  assert.match(lastFrame, /"nameWidth":5/);
+  assert.match(lastFrame, /"projectWidth":4/);
 });
 
 test("calculates projectNameWidth correctly for multiple projects", () => {
@@ -61,14 +73,14 @@ test("calculates projectNameWidth correctly for multiple projects", () => {
     return <Text>{JSON.stringify(layout)}</Text>;
   };
 
-  const { lastFrame } = render(
-    <LayoutProvider checks={[check1, check2]} projects={projects}>
-      <App />
-    </LayoutProvider>,
+  const lastFrame = renderWithLayoutProvider(
+    [check1, check2],
+    projects,
+    <App />,
   );
 
   // proj1/short = 5 + 1 + 5 = 11
   // longer-project/very-long-name = 14 + 1 + 14 = 29
   // projectNameWidth should be 29
-  assert.match(lastFrame() ?? "", /"projectNameWidth":29/);
+  assert.match(lastFrame, /"projectNameWidth":29/);
 });

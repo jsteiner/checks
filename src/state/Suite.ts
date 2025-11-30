@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { SuiteDefinition, SuiteState } from "../types.js";
 import type { Check } from "./Check.js";
+import { createWaitForCompletion } from "./eventEmitterHelper.js";
 import { Project } from "./Project.js";
 import { combineSummaries } from "./summary.js";
 
@@ -17,6 +18,10 @@ export class Suite {
     this.projects.forEach((store) => {
       store.subscribe(() => this.emit());
     });
+    this.waitForCompletion = createWaitForCompletion(
+      this.emitter,
+      this.isComplete.bind(this),
+    );
   }
 
   subscribe = (listener: () => void) => {
@@ -32,21 +37,7 @@ export class Suite {
     return store.getCheck(checkIndex);
   }
 
-  waitForCompletion(): Promise<void> {
-    if (this.isComplete()) {
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve) => {
-      const listener = () => {
-        if (!this.isComplete()) return;
-        this.emitter.off("update", listener);
-        resolve();
-      };
-
-      this.emitter.on("update", listener);
-    });
-  }
+  waitForCompletion: () => Promise<void>;
 
   toState = (): SuiteState => this.snapshot;
 

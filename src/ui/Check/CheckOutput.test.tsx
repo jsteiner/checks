@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import { createCheck } from "../../test/helpers/check.js";
+import { createCheck } from "../../test/helpers/factories.js";
 import { CheckOutput } from "./CheckOutput.js";
 
 test("returns null when output is hidden", () => {

@@ -1,36 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import { createCheck } from "../../test/helpers/check.js";
-import { stripAnsi } from "../../test/helpers/ui.js";
+import { createCheck, createProject } from "../../test/helpers/factories.js";
+import { stripAnsi } from "../../test/helpers/ui.jsx";
 import type { ProjectState } from "../../types.js";
 import { LayoutProvider } from "../LayoutContext.js";
 import { Suite } from "./index.js";
 
-test("shows a project summary in the header", () => {
-  const check = createCheck({
-    status: "passed",
-    startedAt: 0,
-    finishedAt: 100,
-  });
-
-  const projects: ProjectState[] = [
-    {
-      project: "demo",
-      path: "/tmp/config.json",
-      color: "cyan",
-      checks: [check],
-      summary: {
-        total: 1,
-        pending: 0,
-        passed: 1,
-        failed: 0,
-        aborted: 0,
-        durationMs: 100,
-      },
-      isComplete: true,
-    },
-  ];
+function renderSuite(projects: ProjectState[]): string {
   const [project] = projects;
   if (!project) {
     throw new Error("Expected a project entry");
@@ -42,7 +19,27 @@ test("shows a project summary in the header", () => {
     </LayoutProvider>,
   );
 
-  const frame = stripAnsi(lastFrame() ?? "");
+  return stripAnsi(lastFrame() ?? "");
+}
+
+test("shows a project summary in the header", () => {
+  const check = createCheck({
+    result: { status: "passed", finishedAt: 100, exitCode: 0 },
+    startedAt: 0,
+  });
+
+  const projects: ProjectState[] = [
+    createProject({
+      project: "demo",
+      path: "/tmp/config.json",
+      color: "cyan",
+      checks: [check],
+      durationMs: 100,
+      isComplete: true,
+    }),
+  ];
+
+  const frame = renderSuite(projects);
 
   assert.match(frame, /demo/);
   assert.match(frame, /0\.10s/);
@@ -53,45 +50,31 @@ test("shows a project summary in the header", () => {
 
 test("shows a status breakdown when any check fails", () => {
   const projects: ProjectState[] = [
-    {
+    createProject({
       project: "demo",
       path: "/tmp/config.json",
       color: "cyan",
       checks: [
         createCheck({
-          status: "passed",
+          result: { status: "passed", finishedAt: 100, exitCode: 0 },
           startedAt: 0,
-          finishedAt: 100,
         }),
         createCheck({
-          status: "failed",
+          result: {
+            status: "failed",
+            finishedAt: 50,
+            exitCode: 1,
+            errorMessage: null,
+          },
           startedAt: 0,
-          finishedAt: 50,
         }),
       ],
-      summary: {
-        total: 2,
-        pending: 0,
-        passed: 1,
-        failed: 1,
-        aborted: 0,
-        durationMs: 100,
-      },
+      durationMs: 100,
       isComplete: true,
-    },
+    }),
   ];
-  const [project] = projects;
-  if (!project) {
-    throw new Error("Expected a project entry");
-  }
 
-  const { lastFrame } = render(
-    <LayoutProvider checks={project.checks} projects={projects}>
-      <Suite projects={projects} />
-    </LayoutProvider>,
-  );
-
-  const frame = stripAnsi(lastFrame() ?? "");
+  const frame = renderSuite(projects);
 
   assert.match(frame, /demo/);
   assert.match(frame, /0\.10s/);
@@ -104,23 +87,20 @@ test("shows a status breakdown when any check fails", () => {
 test("renders multiple projects with sequential check indexes", () => {
   const checks = [
     createCheck({
-      status: "passed",
+      result: { status: "passed", finishedAt: 10, exitCode: 0 },
       startedAt: 0,
-      finishedAt: 10,
       name: "one",
       command: "echo one",
     }),
     createCheck({
-      status: "passed",
+      result: { status: "passed", finishedAt: 20, exitCode: 0 },
       startedAt: 0,
-      finishedAt: 20,
       name: "two",
       command: "echo two",
     }),
     createCheck({
-      status: "passed",
+      result: { status: "passed", finishedAt: 30, exitCode: 0 },
       startedAt: 0,
-      finishedAt: 30,
       name: "three",
       command: "echo three",
     }),
@@ -132,36 +112,22 @@ test("renders multiple projects with sequential check indexes", () => {
   }
 
   const projects: ProjectState[] = [
-    {
+    createProject({
       project: "alpha",
       path: "/tmp/alpha.json",
       color: "cyan",
       checks: [first],
-      summary: {
-        total: 1,
-        pending: 0,
-        passed: 1,
-        failed: 0,
-        aborted: 0,
-        durationMs: 10,
-      },
+      durationMs: 10,
       isComplete: true,
-    },
-    {
+    }),
+    createProject({
       project: "beta",
       path: "/tmp/beta.json",
       color: "magenta",
       checks: [second, third],
-      summary: {
-        total: 2,
-        pending: 0,
-        passed: 2,
-        failed: 0,
-        aborted: 0,
-        durationMs: 30,
-      },
+      durationMs: 30,
       isComplete: true,
-    },
+    }),
   ];
 
   const { lastFrame } = render(
