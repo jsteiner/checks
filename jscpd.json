@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/jscpd.json",
+  "threshold": 0,
+  "reporters": ["consoleFull"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/*.md",
+    "**/dist/**",
+    "**/tmp/**"
+  ]
+}

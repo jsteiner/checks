@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint:biome": "biome check --write --error-on-warnings",
     "lint:unused": "knip",
+    "lint:dupes": "jscpd --config jscpd.json",
     "test": "tsx scripts/run-tests.ts",
     "checks": "pnpm build; node dist/index.js",
     "prepare": "pnpm build"
@@ -25,6 +26,7 @@
     "@types/react": "^19.2.6",
     "@types/react-test-renderer": "^19.1.0",
     "ink-testing-library": "^4.0.0",
+    "jscpd": "^4.0.5",
     "knip": "^5.70.2",
     "node-gyp": "^12.1.0",
     "react-test-renderer": "19.2.0",

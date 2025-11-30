@@ -5,6 +5,7 @@
 		{ "name": "typecheck", "command": "pnpm typecheck" },
 		{ "name": "test", "command": "pnpm test" },
 		{ "name": "lint:biome", "command": "pnpm lint:biome" },
-		{ "name": "lint:unused", "command": "pnpm lint:unused" }
+		{ "name": "lint:unused", "command": "pnpm lint:unused" },
+		{ "name": "lint:dupes", "command": "pnpm lint:dupes" }
 	]
 }
