@@ -61,9 +61,20 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+    }
+  | {
+      status?: never;
+      result?: never;
+      output?: string;
+      startedAt?: number;
+      name?: string;
+      command?: string;
+      cwd?: string;
     };
 
-export function createCheck(options: CreateCheckOptions): CheckState {
+export function createCheck(
+  options: CreateCheckOptions = { status: "pending" },
+): CheckState {
   const {
     startedAt = 0,
     name = "demo",
@@ -72,7 +83,8 @@ export function createCheck(options: CreateCheckOptions): CheckState {
     output = "",
   } = options;
 
-  const result = options.result ?? createResult({ status: options.status });
+  const result =
+    options.result ?? createResult({ status: options.status ?? "pending" });
 
   return {
     name,
@@ -117,5 +129,27 @@ export function createProject({
     checks,
     summary,
     isComplete,
+  };
+}
+
+interface CreateConfigDataOptions {
+  project?: string;
+  color?: ProjectColor;
+  checks?: Array<{ name: string; command: string }>;
+}
+
+export function createConfigData({
+  project = "test-project",
+  color,
+  checks = [{ name: "test", command: "echo test" }],
+}: CreateConfigDataOptions = {}): {
+  project: string;
+  color?: ProjectColor;
+  checks: Array<{ name: string; command: string }>;
+} {
+  return {
+    project,
+    ...(color && { color }),
+    checks,
   };
 }

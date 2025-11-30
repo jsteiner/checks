@@ -5,6 +5,7 @@ import { EXIT_CODES, runChecks } from "./index.js";
 import type { Suite } from "./state/Suite.js";
 import { createRenderWithAbort } from "./test/helpers/app.jsx";
 import { createConfigFile } from "./test/helpers/configFile.js";
+import { createConfigData } from "./test/helpers/factories.js";
 
 type InkRender = typeof import("ink").render;
 type ExecutorFactory = (
@@ -63,10 +64,9 @@ async function runTestConfigWithArgs(
 test("surfaces invalid glob errors to the user", async () => {
   const errors: string[] = [];
   const exitCode = await runTestConfigWithArgs(
-    {
-      project: "project",
+    createConfigData({
       checks: [{ name: "lint", command: "echo lint" }],
-    },
+    }),
     ["--only", "li*:deep"],
     (message) => errors.push(message),
   );
@@ -81,10 +81,7 @@ test("surfaces invalid glob errors to the user", async () => {
 test("notifies when no checks are defined", async () => {
   const errors: string[] = [];
   const exitCode = await runTestConfig(
-    {
-      project: "project",
-      checks: [],
-    },
+    createConfigData({ checks: [] }),
     () => ({ run: async () => {} }),
     (message) => errors.push(message),
   );
@@ -96,10 +93,9 @@ test("notifies when no checks are defined", async () => {
 test("notifies when filters exclude all checks", async () => {
   const errors: string[] = [];
   const exitCode = await runTestConfigWithArgs(
-    {
-      project: "project",
+    createConfigData({
       checks: [{ name: "lint", command: "echo lint" }],
-    },
+    }),
     ["--only", "missing"],
     (message) => errors.push(message),
   );
@@ -109,58 +105,28 @@ test("notifies when filters exclude all checks", async () => {
 });
 
 test("runs checks successfully and exits with success code", async () => {
-  const exitCode = await runTestConfig(
-    {
-      project: "project",
-      checks: [
-        {
-          name: "lint",
-          command: `${process.execPath} -e "console.log('ok') ; process.exit(0)"`,
-        },
-      ],
+  const exitCode = await runTestConfig(createConfigData(), (_input, store) => ({
+    run: async () => {
+      store.getCheck(0, 0).markPassed(0);
     },
-    (_input, store) => ({
-      run: async () => {
-        store.getCheck(0, 0).markPassed(0);
-      },
-    }),
-  );
+  }));
 
   assert.equal(exitCode, EXIT_CODES.success);
 });
 
 test("exits with checks failed code when a check fails", async () => {
-  const exitCode = await runTestConfig(
-    {
-      project: "project",
-      checks: [
-        {
-          name: "lint",
-          command: `${process.execPath} -e "console.error('boom'); process.exit(1)"`,
-        },
-      ],
+  const exitCode = await runTestConfig(createConfigData(), (_input, store) => ({
+    run: async () => {
+      store.getCheck(0, 0).markFailed(1, "boom");
     },
-    (_input, store) => ({
-      run: async () => {
-        store.getCheck(0, 0).markFailed(1, "boom");
-      },
-    }),
-  );
+  }));
 
   assert.equal(exitCode, EXIT_CODES.checksFailed);
 });
 
 test("exits with aborted code when receiving SIGINT", async () => {
   const exitCode = await runTestConfigWithAbort(
-    {
-      project: "project",
-      checks: [
-        {
-          name: "wait",
-          command: `${process.execPath} -e "setTimeout(() => {}, 1000)"`,
-        },
-      ],
-    },
+    createConfigData(),
     (_input, store) => ({
       run: async () => {
         store.getCheck(0, 0).markAborted();
@@ -173,10 +139,7 @@ test("exits with aborted code when receiving SIGINT", async () => {
 
 test("exits with aborted code when signal is aborted but checks are not marked aborted", async () => {
   const exitCode = await runTestConfigWithAbort(
-    {
-      project: "project",
-      checks: [{ name: "test", command: "echo test" }],
-    },
+    createConfigData(),
     (_input, store) => ({
       run: async () => {
         store.getCheck(0, 0).markPassed(0);
@@ -190,15 +153,7 @@ test("exits with aborted code when signal is aborted but checks are not marked a
 test("logs runtime errors and exits with orchestrator error", async () => {
   const errors: string[] = [];
   const exitCode = await runTestConfig(
-    {
-      project: "project",
-      checks: [
-        {
-          name: "lint",
-          command: `${process.execPath} -e "console.log('ok') ; process.exit(0)"`,
-        },
-      ],
-    },
+    createConfigData(),
     () => ({
       run: async () => {
         throw new Error("runtime boom");
@@ -213,13 +168,12 @@ test("logs runtime errors and exits with orchestrator error", async () => {
 
 test("returns failed exit code when any check fails even if others pass", async () => {
   const exitCode = await runTestConfig(
-    {
-      project: "project",
+    createConfigData({
       checks: [
         { name: "pass", command: "echo pass" },
         { name: "fail", command: "echo fail" },
       ],
-    },
+    }),
     (_input, store) => ({
       run: async () => {
         store.getCheck(0, 0).markPassed(0);
@@ -234,10 +188,7 @@ test("returns failed exit code when any check fails even if others pass", async 
 test("handles non-Error exceptions during runtime", async () => {
   const errors: string[] = [];
   const exitCode = await runTestConfig(
-    {
-      project: "project",
-      checks: [{ name: "lint", command: "echo ok" }],
-    },
+    createConfigData(),
     () => ({
       run: async () => {
         throw "string error";

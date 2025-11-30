@@ -25,14 +25,11 @@ function renderSuite(projects: ProjectState[]): string {
 test("shows a project summary in the header", () => {
   const check = createCheck({
     result: { status: "passed", finishedAt: 100, exitCode: 0 },
-    startedAt: 0,
   });
 
   const projects: ProjectState[] = [
     createProject({
       project: "demo",
-      path: "/tmp/config.json",
-      color: "cyan",
       checks: [check],
       durationMs: 100,
       isComplete: true,
@@ -52,12 +49,9 @@ test("shows a status breakdown when any check fails", () => {
   const projects: ProjectState[] = [
     createProject({
       project: "demo",
-      path: "/tmp/config.json",
-      color: "cyan",
       checks: [
         createCheck({
           result: { status: "passed", finishedAt: 100, exitCode: 0 },
-          startedAt: 0,
         }),
         createCheck({
           result: {
@@ -66,7 +60,6 @@ test("shows a status breakdown when any check fails", () => {
             exitCode: 1,
             errorMessage: null,
           },
-          startedAt: 0,
         }),
       ],
       durationMs: 100,
@@ -87,22 +80,16 @@ test("shows a status breakdown when any check fails", () => {
 test("renders multiple projects with sequential check indexes", () => {
   const checks = [
     createCheck({
-      result: { status: "passed", finishedAt: 10, exitCode: 0 },
-      startedAt: 0,
       name: "one",
-      command: "echo one",
+      result: { status: "passed", finishedAt: 10, exitCode: 0 },
     }),
     createCheck({
-      result: { status: "passed", finishedAt: 20, exitCode: 0 },
-      startedAt: 0,
       name: "two",
-      command: "echo two",
+      result: { status: "passed", finishedAt: 20, exitCode: 0 },
     }),
     createCheck({
-      result: { status: "passed", finishedAt: 30, exitCode: 0 },
-      startedAt: 0,
       name: "three",
-      command: "echo three",
+      result: { status: "passed", finishedAt: 30, exitCode: 0 },
     }),
   ];
 
@@ -114,19 +101,11 @@ test("renders multiple projects with sequential check indexes", () => {
   const projects: ProjectState[] = [
     createProject({
       project: "alpha",
-      path: "/tmp/alpha.json",
-      color: "cyan",
       checks: [first],
-      durationMs: 10,
-      isComplete: true,
     }),
     createProject({
       project: "beta",
-      path: "/tmp/beta.json",
-      color: "magenta",
       checks: [second, third],
-      durationMs: 30,
-      isComplete: true,
     }),
   ];
 

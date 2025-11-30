@@ -18,7 +18,7 @@ test("formatCheckDurationLabel returns a formatted duration when finished", () =
 });
 
 test("formatCheckDurationLabel returns null while running", () => {
-  const check = createCheck({ status: "running", startedAt: 1_000 });
+  const check = createCheck({ status: "running" });
   assert.equal(formatCheckDurationLabel(check), null);
 });
 

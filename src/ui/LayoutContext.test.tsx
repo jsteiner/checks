@@ -45,7 +45,7 @@ test("throws when useLayout is called outside of LayoutProvider", () => {
 });
 
 test("provides layout values inside the provider", () => {
-  const checks = [createCheck({ status: "running", name: "first" })];
+  const checks = [createCheck({ name: "first" })];
   const projects = [createProject({ project: "test", checks })];
 
   const App = () => {
@@ -60,8 +60,8 @@ test("provides layout values inside the provider", () => {
 });
 
 test("calculates projectNameWidth correctly for multiple projects", () => {
-  const check1 = createCheck({ status: "running", name: "short" });
-  const check2 = createCheck({ status: "running", name: "very-long-name" });
+  const check1 = createCheck({ name: "short" });
+  const check2 = createCheck({ name: "very-long-name" });
 
   const projects = [
     createProject({ project: "proj1", checks: [check1] }),

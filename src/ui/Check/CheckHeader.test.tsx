@@ -8,17 +8,11 @@ import { CheckHeader } from "./CheckHeader.js";
 
 test("shows duration to the right of the command after completion", () => {
   const check = createCheck({
-    name: "demo",
     command: "echo hi",
-    cwd: "/tmp/project",
     startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
-  const project = createProject({
-    project: "test-project",
-    path: "/tmp/config.json",
-    color: "cyan",
-  });
+  const project = createProject();
   const { lastFrame } = renderWithLayout(
     <CheckHeader project={project} check={check} index={0} />,
     [check],
@@ -30,16 +24,10 @@ test("shows duration to the right of the command after completion", () => {
 
 test("omits duration while running", () => {
   const check = createCheck({
-    name: "demo",
     command: "echo hi",
-    cwd: "/tmp/project",
     status: "running",
   });
-  const project = createProject({
-    project: "test-project",
-    path: "/tmp/config.json",
-    color: "cyan",
-  });
+  const project = createProject();
   const { lastFrame } = renderWithLayout(
     <CheckHeader project={project} check={check} index={0} />,
     [check],
@@ -52,17 +40,10 @@ test("omits duration while running", () => {
 
 test("truncates commands longer than 20 chars with ellipsis", () => {
   const check = createCheck({
-    name: "demo",
     command: "this-is-a-very-long-command-that-exceeds-twenty-characters",
-    cwd: "/tmp/project",
-    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
-  const project = createProject({
-    project: "test-project",
-    path: "/tmp/config.json",
-    color: "cyan",
-  });
+  const project = createProject();
   const { lastFrame } = renderWithLayout(
     <CheckHeader project={project} check={check} index={0} />,
     [check],
@@ -75,17 +56,10 @@ test("truncates commands longer than 20 chars with ellipsis", () => {
 
 test("does not truncate commands shorter than 20 chars", () => {
   const check = createCheck({
-    name: "demo",
     command: "short-cmd",
-    cwd: "/tmp/project",
-    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
-  const project = createProject({
-    project: "test-project",
-    path: "/tmp/config.json",
-    color: "cyan",
-  });
+  const project = createProject();
   const { lastFrame } = renderWithLayout(
     <CheckHeader project={project} check={check} index={0} />,
     [check],
@@ -100,29 +74,21 @@ test("pads project/name combinations so commands align", () => {
   const shortCheck = createCheck({
     name: "a",
     command: "cmd-1",
-    cwd: "/tmp/project",
-    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
   const longCheck = createCheck({
     name: "very-long-check-name",
     command: "cmd-2",
-    cwd: "/tmp/project",
-    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
 
   const shortProject = createProject({
     project: "p1",
-    path: "/tmp/config.json",
-    color: "cyan",
     checks: [shortCheck],
   });
 
   const longProject = createProject({
     project: "longer-project",
-    path: "/tmp/config.json",
-    color: "cyan",
     checks: [longCheck],
   });
 

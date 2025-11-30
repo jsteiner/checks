@@ -7,6 +7,7 @@ import {
   createConfigFile,
   createRawConfigFile,
 } from "../test/helpers/configFile.js";
+import { createConfigData } from "../test/helpers/factories.js";
 import { FileConfigError, loadFileConfig } from "./fileConfig.js";
 
 test("throws when config file is missing", async () => {
@@ -84,13 +85,15 @@ test("requires a project field", async () => {
 });
 
 test("parses a valid config", async () => {
-  const filePath = await createConfigFile({
-    project: "demo",
-    checks: [
-      { name: "lint", command: "pnpm lint" },
-      { name: "test", command: "pnpm test" },
-    ],
-  });
+  const filePath = await createConfigFile(
+    createConfigData({
+      project: "demo",
+      checks: [
+        { name: "lint", command: "pnpm lint" },
+        { name: "test", command: "pnpm test" },
+      ],
+    }),
+  );
 
   const config = await loadFileConfig(filePath);
   assert.equal(config.project, "demo");
@@ -99,11 +102,9 @@ test("parses a valid config", async () => {
 });
 
 test("parses an optional project color", async () => {
-  const filePath = await createConfigFile({
-    project: "demo",
-    color: "magenta",
-    checks: [{ name: "lint", command: "pnpm lint" }],
-  });
+  const filePath = await createConfigFile(
+    createConfigData({ color: "magenta" }),
+  );
 
   const config = await loadFileConfig(filePath);
   assert.equal(config.color, "magenta");

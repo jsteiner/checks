@@ -7,6 +7,7 @@ import {
   setupSymlinkAndIgnoredDirs,
   writeConfigFiles,
 } from "../test/helpers/configFile.js";
+import { createConfigData } from "../test/helpers/factories.js";
 import { buildInput } from "./index.js";
 
 async function buildRecursiveInput() {
@@ -29,13 +30,15 @@ async function buildRecursiveInput() {
 }
 
 test("builds config and CLI options", async () => {
-  const configPath = await createConfigFile({
-    project: "project",
-    checks: [
-      { name: "lint", command: "pnpm lint" },
-      { name: "test", command: "pnpm test" },
-    ],
-  });
+  const configPath = await createConfigFile(
+    createConfigData({
+      project: "project",
+      checks: [
+        { name: "lint", command: "pnpm lint" },
+        { name: "test", command: "pnpm test" },
+      ],
+    }),
+  );
   const configDir = path.dirname(configPath);
 
   const input = await buildInput([
@@ -103,10 +106,9 @@ test("skips symlinks and ignored directories when searching recursively", async 
 });
 
 test("uses directory argument to resolve config path", async () => {
-  const configPath = await createConfigFile({
-    project: "test-project",
-    checks: [{ name: "lint", command: "echo lint" }],
-  });
+  const configPath = await createConfigFile(
+    createConfigData({ project: "test-project" }),
+  );
   const baseDir = path.dirname(configPath);
 
   const input = await buildInput(["node", "checks", baseDir]);
