@@ -1,42 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
+import { createCheck, createProject } from "../../test/helpers/factories.js";
 import { renderWithLayout, stripAnsi } from "../../test/helpers/ui.jsx";
-import type { CheckState, ProjectState } from "../../types.js";
 import { LayoutProvider } from "../LayoutContext.js";
 import { CheckHeader } from "./CheckHeader.js";
 
-const BASE_CHECK: Omit<CheckState, "result"> = {
-  name: "demo",
-  command: "echo hi",
-  cwd: "/tmp/project",
-  startedAt: 1_000,
-  output: "",
-};
-
-const BASE_PROJECT: ProjectState = {
-  project: "test-project",
-  path: "/tmp/config.json",
-  color: "cyan",
-  checks: [],
-  summary: {
-    total: 0,
-    pending: 0,
-    passed: 0,
-    failed: 0,
-    aborted: 0,
-    durationMs: 0,
-  },
-  isComplete: false,
-};
-
 test("shows duration to the right of the command after completion", () => {
-  const check: CheckState = {
-    ...BASE_CHECK,
+  const check = createCheck({
+    name: "demo",
+    command: "echo hi",
+    cwd: "/tmp/project",
+    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
-  };
+  });
+  const project = createProject({
+    project: "test-project",
+    path: "/tmp/config.json",
+    color: "cyan",
+  });
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
+    <CheckHeader project={project} check={check} index={0} />,
     [check],
   );
 
@@ -45,9 +29,19 @@ test("shows duration to the right of the command after completion", () => {
 });
 
 test("omits duration while running", () => {
-  const check: CheckState = { ...BASE_CHECK, result: { status: "running" } };
+  const check = createCheck({
+    name: "demo",
+    command: "echo hi",
+    cwd: "/tmp/project",
+    status: "running",
+  });
+  const project = createProject({
+    project: "test-project",
+    path: "/tmp/config.json",
+    color: "cyan",
+  });
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
+    <CheckHeader project={project} check={check} index={0} />,
     [check],
   );
 
@@ -57,13 +51,20 @@ test("omits duration while running", () => {
 });
 
 test("truncates commands longer than 20 chars with ellipsis", () => {
-  const check: CheckState = {
-    ...BASE_CHECK,
+  const check = createCheck({
+    name: "demo",
     command: "this-is-a-very-long-command-that-exceeds-twenty-characters",
+    cwd: "/tmp/project",
+    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
-  };
+  });
+  const project = createProject({
+    project: "test-project",
+    path: "/tmp/config.json",
+    color: "cyan",
+  });
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
+    <CheckHeader project={project} check={check} index={0} />,
     [check],
   );
 
@@ -73,13 +74,20 @@ test("truncates commands longer than 20 chars with ellipsis", () => {
 });
 
 test("does not truncate commands shorter than 20 chars", () => {
-  const check: CheckState = {
-    ...BASE_CHECK,
+  const check = createCheck({
+    name: "demo",
     command: "short-cmd",
+    cwd: "/tmp/project",
+    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
-  };
+  });
+  const project = createProject({
+    project: "test-project",
+    path: "/tmp/config.json",
+    color: "cyan",
+  });
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={BASE_PROJECT} check={check} index={0} />,
+    <CheckHeader project={project} check={check} index={0} />,
     [check],
   );
 
@@ -89,30 +97,34 @@ test("does not truncate commands shorter than 20 chars", () => {
 });
 
 test("pads project/name combinations so commands align", () => {
-  const shortCheck: CheckState = {
-    ...BASE_CHECK,
+  const shortCheck = createCheck({
     name: "a",
     command: "cmd-1",
+    cwd: "/tmp/project",
+    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
-  };
-  const longCheck: CheckState = {
-    ...BASE_CHECK,
+  });
+  const longCheck = createCheck({
     name: "very-long-check-name",
     command: "cmd-2",
+    cwd: "/tmp/project",
+    startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
-  };
+  });
 
-  const shortProject: ProjectState = {
-    ...BASE_PROJECT,
+  const shortProject = createProject({
     project: "p1",
+    path: "/tmp/config.json",
+    color: "cyan",
     checks: [shortCheck],
-  };
+  });
 
-  const longProject: ProjectState = {
-    ...BASE_PROJECT,
+  const longProject = createProject({
     project: "longer-project",
+    path: "/tmp/config.json",
+    color: "cyan",
     checks: [longCheck],
-  };
+  });
 
   const { lastFrame } = render(
     <LayoutProvider
