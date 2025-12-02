@@ -124,3 +124,7 @@ checks --recursive --only "web*/lint" # use the same pattern rules as above to m
   - `1` orchestrator/config error
   - `2` checks failed
   - `3` aborted (Ctrl+C, `q`, or fail-fast stopping other checks).
+
+## Documentation
+
+* [ARCHITECTURE.md](docs/ARCHITECTURE.md)

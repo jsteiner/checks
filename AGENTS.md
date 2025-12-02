@@ -20,4 +20,5 @@ You have access to the following `pnpm` scripts:
 
 # Architecture
 
-- Extract shared test helpers to `src/test/helpers`.
+- Always read `docs/ARCHITECTURE.md` when you first start up.
+- Update `docs/ARCHITECTURE.md` when making meaningful architectural changes.
