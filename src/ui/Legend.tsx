@@ -1,56 +1,14 @@
-import { Box, Text, useInput } from "ink";
-import { useMemo } from "react";
+import { Box, Text } from "ink";
 import { INSET } from "./layout.js";
 import type { HotkeyConfig } from "./types.js";
 
 interface LegendProps {
   interactive: boolean;
-  isComplete: boolean;
-  focusedIndex: number | null;
-  maxFocusableIndex: number;
-  onFocusChange: (index: number | null) => void;
-  onAbort: () => void;
-  onQuit: () => void;
+  hotkeys: HotkeyConfig[];
 }
 
-export function Legend({
-  interactive,
-  isComplete,
-  focusedIndex,
-  maxFocusableIndex,
-  onFocusChange,
-  onAbort,
-  onQuit,
-}: LegendProps) {
-  const hotkeys = useMemo(
-    () =>
-      createHotkeys({
-        isComplete,
-        focusedIndex,
-        maxFocusableIndex,
-        onFocusChange,
-        onAbort,
-        onQuit,
-      }),
-    [
-      isComplete,
-      focusedIndex,
-      maxFocusableIndex,
-      onAbort,
-      onFocusChange,
-      onQuit,
-    ],
-  );
-
-  useInput(
-    (input) => {
-      const match = hotkeys.find((hotkey) =>
-        hotkey.match ? hotkey.match(input) : input === hotkey.keys,
-      );
-      match?.handler(input);
-    },
-    { isActive: interactive },
-  );
+export function Legend({ interactive, hotkeys }: LegendProps) {
+  if (!interactive) return null;
 
   return (
     <Box marginTop={1} paddingX={INSET}>
@@ -71,93 +29,4 @@ export function Legend({
 
 function LegendItem({ keys, description }: HotkeyConfig) {
   return <Text>{`${keys} to ${description}`}</Text>;
-}
-
-function createHotkeys({
-  isComplete,
-  focusedIndex,
-  maxFocusableIndex,
-  onFocusChange,
-  onAbort,
-  onQuit,
-}: Omit<LegendProps, "interactive">): HotkeyConfig[] {
-  const hotkeys: HotkeyConfig[] = [
-    createFocusHotkey({ focusedIndex, maxFocusableIndex, onFocusChange }),
-    createQuitHotkey({ isComplete, onAbort, onQuit }),
-  ];
-
-  if (focusedIndex !== null) {
-    hotkeys.unshift(createUnfocusHotkey({ focusedIndex, onFocusChange }));
-  }
-
-  return hotkeys;
-}
-
-function createFocusHotkey({
-  focusedIndex,
-  maxFocusableIndex,
-  onFocusChange,
-}: {
-  focusedIndex: number | null;
-  maxFocusableIndex: number;
-  onFocusChange: (index: number | null) => void;
-}): HotkeyConfig {
-  return {
-    keys: "<n>",
-    description: "focus",
-    handler: (input) => {
-      const index = parseNumberKey(input);
-      if (index === null || index > maxFocusableIndex) return;
-      if (index === focusedIndex) return;
-      onFocusChange(index);
-    },
-    match: (input) => {
-      const index = parseNumberKey(input);
-      return index !== null && index <= maxFocusableIndex;
-    },
-  };
-}
-
-function createUnfocusHotkey({
-  focusedIndex,
-  onFocusChange,
-}: {
-  focusedIndex: number;
-  onFocusChange: (index: number | null) => void;
-}): HotkeyConfig {
-  const displayIndex = focusedIndex + 1;
-  return {
-    keys: `x or ${displayIndex}`,
-    description: "unfocus",
-    handler: () => onFocusChange(null),
-    match: (input) => input === "x" || parseNumberKey(input) === focusedIndex,
-  };
-}
-
-function createQuitHotkey({
-  isComplete,
-  onAbort,
-  onQuit,
-}: {
-  isComplete: boolean;
-  onAbort: () => void;
-  onQuit: () => void;
-}): HotkeyConfig {
-  return {
-    keys: "q",
-    description: "quit",
-    handler: () => {
-      if (!isComplete) {
-        onAbort();
-      }
-      onQuit();
-    },
-  };
-}
-
-function parseNumberKey(input: string): number | null {
-  if (input.length !== 1) return null;
-  const code = input.charCodeAt(0);
-  if (code < 49 || code > 57) return null; // 1-9
-  return Number.parseInt(input, 10) - 1;
 }

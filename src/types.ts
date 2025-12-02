@@ -19,6 +19,7 @@ export interface ProjectDefinition {
 }
 
 export interface CheckState extends CheckDefinition {
+  index: number;
   startedAt: number | null;
   output: string;
   result: CheckResult;

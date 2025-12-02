@@ -12,16 +12,22 @@ export class Check {
   readonly name: string;
   readonly command: string;
   readonly cwd: string;
+  readonly index: number;
   startedAt: number | null = null;
 
   private _result: CheckResult = { status: "pending" };
   private _output = "";
-  private readonly onUpdate: () => void;
+  private readonly onUpdate: (eventType: "status" | "output") => void;
 
-  constructor(definition: CheckDefinition, onUpdate: () => void = () => {}) {
+  constructor(
+    definition: CheckDefinition,
+    index: number,
+    onUpdate: (eventType: "status" | "output") => void = () => {},
+  ) {
     this.name = definition.name;
     this.command = definition.command;
     this.cwd = definition.cwd;
+    this.index = index;
     this.onUpdate = onUpdate;
   }
 
@@ -54,20 +60,20 @@ export class Check {
   setOutput(text: string): boolean {
     if (this._output === text) return false;
     this._output = text;
-    this.onUpdate();
+    this.onUpdate("output");
     return true;
   }
 
   setResult(result: CheckResult): void {
     this._result = result;
-    this.onUpdate();
+    this.onUpdate("status");
   }
 
   markRunning(): boolean {
     if (this.isTerminal()) return false;
     this.startedAt = Date.now();
     this._result = { status: "running" };
-    this.onUpdate();
+    this.onUpdate("status");
     return true;
   }
 
@@ -78,7 +84,7 @@ export class Check {
       finishedAt: Date.now(),
       exitCode,
     };
-    this.onUpdate();
+    this.onUpdate("status");
     return true;
   }
 
@@ -90,7 +96,7 @@ export class Check {
       finishedAt: Date.now(),
       exitCode,
     };
-    this.onUpdate();
+    this.onUpdate("status");
     return true;
   }
 
@@ -100,7 +106,7 @@ export class Check {
       status: "aborted",
       finishedAt: Date.now(),
     };
-    this.onUpdate();
+    this.onUpdate("status");
     return true;
   }
 
@@ -109,6 +115,7 @@ export class Check {
       name: this.name,
       command: this.command,
       cwd: this.cwd,
+      index: this.index,
       startedAt: this.startedAt,
       output: this.output,
       result: this.cloneResult(),

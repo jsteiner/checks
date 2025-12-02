@@ -7,13 +7,12 @@ import { LONG_STATUS_WIDTH, STATUS_COLORS, STATUS_LABELS } from "../status.js";
 interface CheckHeaderProps {
   project: ProjectState;
   check: CheckState;
-  index: number;
 }
 
-export function CheckHeader({ project, check, index }: CheckHeaderProps) {
+export function CheckHeader({ project, check }: CheckHeaderProps) {
   const { indexWidth, projectNameWidth, commandWidth } = useLayout();
   const status: CheckStatus = check.result.status;
-  const indexLabel = `${index + 1}.`.padEnd(indexWidth);
+  const indexLabel = `${check.index + 1}.`.padEnd(indexWidth);
   const statusLabel = STATUS_LABELS[status].padEnd(LONG_STATUS_WIDTH);
   const combinedLength = project.project.length + 1 + check.name.length;
   const padding = " ".repeat(Math.max(0, projectNameWidth - combinedLength));

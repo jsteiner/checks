@@ -52,6 +52,7 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+      index?: number;
     }
   | {
       status?: never;
@@ -61,6 +62,7 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+      index?: number;
     }
   | {
       status?: never;
@@ -70,12 +72,14 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+      index?: number;
     };
 
 export function createCheck(
   options: CreateCheckOptions = { status: "pending" },
 ): CheckState {
   const {
+    index = 0,
     startedAt = 0,
     name = "demo",
     command = "echo hi",
@@ -90,6 +94,7 @@ export function createCheck(
     name,
     command,
     cwd,
+    index,
     startedAt,
     output,
     result,
@@ -103,6 +108,7 @@ interface CreateProjectOptions {
   checks?: CheckState[];
   isComplete?: boolean;
   durationMs?: number;
+  startIndex?: number;
 }
 
 export function createProject({
@@ -112,13 +118,21 @@ export function createProject({
   checks = [],
   isComplete = false,
   durationMs = 0,
+  startIndex = 0,
 }: CreateProjectOptions = {}): ProjectState {
+  const checksWithIndex = checks.map((check, checkIndex) => ({
+    ...check,
+    index: startIndex + checkIndex,
+  }));
+
   const summary: Summary = {
-    total: checks.length,
-    pending: checks.filter((c) => c.result.status === "pending").length,
-    passed: checks.filter((c) => c.result.status === "passed").length,
-    failed: checks.filter((c) => c.result.status === "failed").length,
-    aborted: checks.filter((c) => c.result.status === "aborted").length,
+    total: checksWithIndex.length,
+    pending: checksWithIndex.filter((c) => c.result.status === "pending")
+      .length,
+    passed: checksWithIndex.filter((c) => c.result.status === "passed").length,
+    failed: checksWithIndex.filter((c) => c.result.status === "failed").length,
+    aborted: checksWithIndex.filter((c) => c.result.status === "aborted")
+      .length,
     durationMs,
   };
 
@@ -126,7 +140,7 @@ export function createProject({
     project,
     path,
     color,
-    checks,
+    checks: checksWithIndex,
     summary,
     isComplete,
   };

@@ -9,23 +9,12 @@ interface SuiteProps {
 }
 
 export function Suite({ projects }: SuiteProps) {
-  let globalIndex = 0;
-
   return (
     <Box flexDirection="column" gap={1}>
       <Box flexDirection="column" gap={1}>
-        {projects.map((project) => {
-          const startIndex = globalIndex;
-          globalIndex += project.checks.length;
-
-          return (
-            <Project
-              key={project.path}
-              project={project}
-              startIndex={startIndex}
-            />
-          );
-        })}
+        {projects.map((project) => (
+          <Project key={project.path} project={project} />
+        ))}
       </Box>
 
       <Divider />

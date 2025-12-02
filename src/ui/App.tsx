@@ -1,10 +1,19 @@
 import { useApp } from "ink";
-import { useSyncExternalStore } from "react";
-import type { Suite as SuiteStore } from "../state/Suite.js";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import type { Suite as SuiteStore, SuiteUpdateEvent } from "../state/Suite.js";
 import { Check } from "./Check/index.js";
 import { WithDividers } from "./Divider.js";
 import { useAbortExit } from "./hooks/useAbortExit.js";
 import { useFocus } from "./hooks/useFocus.js";
+import { useHotkeys } from "./hooks/useHotkeys.js";
 import { LayoutProvider } from "./LayoutContext.js";
 import { Legend } from "./Legend.js";
 import { Suite } from "./Suite/index.js";
@@ -16,21 +25,78 @@ interface AppProps {
   onAbort: () => void;
 }
 
+function createSuiteSubscriber(
+  store: SuiteStore,
+  filterRef: RefObject<ViewFilter>,
+  onStoreChangeRef: RefObject<(() => void) | null>,
+) {
+  return (onStoreChange: () => void) => {
+    onStoreChangeRef.current = onStoreChange;
+    const unsubscribe = store.subscribe((event: SuiteUpdateEvent) => {
+      const filter = filterRef.current;
+
+      if (event.eventType === "status") {
+        onStoreChange();
+        return;
+      }
+
+      if (filter.mode === "focused" && event.checkIndex === filter.checkIndex) {
+        onStoreChange();
+      }
+    });
+
+    return () => {
+      onStoreChangeRef.current = null;
+      unsubscribe();
+    };
+  };
+}
+
+const filterFor = (focusedIndex: number | null): ViewFilter =>
+  focusedIndex === null
+    ? { mode: "suite" }
+    : { mode: "focused", checkIndex: focusedIndex };
+
 export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   const { exit } = useApp();
-  const suite = useSyncExternalStore(
-    store.subscribe,
-    store.toState,
-    store.toState,
+  const filterRef = useRef<ViewFilter>({ mode: "suite" });
+  const onStoreChangeRef = useRef<(() => void) | null>(null);
+
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  filterRef.current = filterFor(focusedIndex);
+
+  const subscribe = useMemo(
+    () => createSuiteSubscriber(store, filterRef, onStoreChangeRef),
+    [store],
   );
+
+  const suite = useSyncExternalStore(subscribe, store.toState, store.toState);
+
   const { projects, isComplete } = suite;
-  const {
-    checks,
+
+  const { checks, focusedCheck, maxFocusableIndex } = useFocus(
+    projects,
     focusedIndex,
-    focusedCheck,
+  );
+
+  useEffect(() => {
+    void focusedIndex;
+    onStoreChangeRef.current?.();
+  }, [focusedIndex]);
+
+  const onFocusChange = useCallback((index: number | null) => {
+    setFocusedIndex(index);
+  }, []);
+
+  const hotkeys = useHotkeys({
+    exit,
+    interactive,
+    focusedIndex,
+    isComplete,
     maxFocusableIndex,
+    onAbort,
     onFocusChange,
-  } = useFocus(projects);
+  });
 
   useAbortExit({ abortSignal, exit, interactive, isComplete });
 
@@ -41,7 +107,6 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
           <Check
             project={focusedCheck.project}
             check={focusedCheck.check}
-            index={focusedCheck.index}
             showOutput
           />
         </WithDividers>
@@ -52,14 +117,11 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
         <Legend
           key={focusedIndex === null ? "legend-list" : `legend-${focusedIndex}`}
           interactive={interactive}
-          isComplete={isComplete}
-          focusedIndex={focusedIndex}
-          maxFocusableIndex={maxFocusableIndex}
-          onFocusChange={onFocusChange}
-          onAbort={onAbort}
-          onQuit={exit}
+          hotkeys={hotkeys}
         />
       ) : null}
     </LayoutProvider>
   );
 }
+
+type ViewFilter = { mode: "suite" } | { mode: "focused"; checkIndex: number };

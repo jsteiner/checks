@@ -14,7 +14,7 @@ test("shows duration to the right of the command after completion", () => {
   });
   const project = createProject();
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} index={0} />,
+    <CheckHeader project={project} check={check} />,
     [check],
   );
 
@@ -29,7 +29,7 @@ test("omits duration while running", () => {
   });
   const project = createProject();
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} index={0} />,
+    <CheckHeader project={project} check={check} />,
     [check],
   );
 
@@ -45,7 +45,7 @@ test("truncates commands longer than 20 chars with ellipsis", () => {
   });
   const project = createProject();
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} index={0} />,
+    <CheckHeader project={project} check={check} />,
     [check],
   );
 
@@ -61,7 +61,7 @@ test("does not truncate commands shorter than 20 chars", () => {
   });
   const project = createProject();
   const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} index={0} />,
+    <CheckHeader project={project} check={check} />,
     [check],
   );
 
@@ -97,8 +97,8 @@ test("pads project/name combinations so commands align", () => {
       checks={[shortCheck, longCheck]}
       projects={[shortProject, longProject]}
     >
-      <CheckHeader project={shortProject} check={shortCheck} index={0} />
-      <CheckHeader project={longProject} check={longCheck} index={1} />
+      <CheckHeader project={shortProject} check={shortCheck} />
+      <CheckHeader project={longProject} check={longCheck} />
     </LayoutProvider>,
   );
 

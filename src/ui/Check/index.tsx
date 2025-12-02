@@ -8,13 +8,12 @@ interface CheckProps {
   project: ProjectState;
   check: CheckState;
   showOutput: boolean;
-  index: number;
 }
 
-export function Check({ project, check, showOutput, index }: CheckProps) {
+export function Check({ project, check, showOutput }: CheckProps) {
   return (
     <Box flexDirection="column" paddingX={INSET} gap={1}>
-      <CheckHeader project={project} check={check} index={index} />
+      <CheckHeader project={project} check={check} />
       <CheckOutput check={check} showOutput={showOutput} />
     </Box>
   );

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
-import { stripAnsi, waitFor, waitForFrameMatch } from "../test/helpers/ui.jsx";
+import { stripAnsi, waitForFrameMatch } from "../test/helpers/ui.jsx";
+import { useHotkeys } from "./hooks/useHotkeys.js";
 import { Legend } from "./Legend.js";
 
 test("renders focus and quit legend when not focused", async () => {
@@ -48,34 +49,6 @@ test("shows unfocus action when a check is focused", async () => {
   ink.unmount();
 });
 
-test("quit hotkey does not abort when all checks are done", async () => {
-  let aborted = false;
-  let quit = false;
-  const ink = render(
-    <Legend
-      interactive
-      isComplete
-      focusedIndex={null}
-      maxFocusableIndex={0}
-      onFocusChange={() => {}}
-      onAbort={() => {
-        aborted = true;
-      }}
-      onQuit={() => {
-        quit = true;
-      }}
-    />,
-  );
-
-  ink.stdin.write("q");
-  await waitFor(() => quit);
-
-  assert.equal(aborted, false);
-  assert.equal(quit, true);
-
-  ink.unmount();
-});
-
 test("shows unfocus hotkey with the focused index", async () => {
   const ink = render(
     <LegendWithLabel
@@ -100,18 +73,20 @@ function LegendWithLabel({
   focusedIndex: number | null;
   maxFocusableIndex: number;
 }) {
+  const hotkeys = useHotkeys({
+    exit: () => {},
+    interactive: false,
+    focusedIndex,
+    isComplete: false,
+    maxFocusableIndex,
+    onAbort: () => {},
+    onFocusChange: () => {},
+  });
+
   return (
     <Box flexDirection="column">
       <Text>{label}</Text>
-      <Legend
-        interactive
-        isComplete={false}
-        focusedIndex={focusedIndex}
-        maxFocusableIndex={maxFocusableIndex}
-        onFocusChange={() => {}}
-        onAbort={() => {}}
-        onQuit={() => {}}
-      />
+      <Legend interactive hotkeys={hotkeys} />
     </Box>
   );
 }

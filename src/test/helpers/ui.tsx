@@ -45,6 +45,7 @@ export function stripAnsi(value: string): string {
 export function renderWithLayout(element: ReactElement, checks: CheckState[]) {
   const projects = [
     {
+      index: 0,
       project: "test",
       path: "/test",
       color: "white" as const,

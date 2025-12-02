@@ -5,35 +5,47 @@ import { Check } from "./Check.js";
 import { createWaitForCompletion } from "./eventEmitterHelper.js";
 import { combineSummaries } from "./summary.js";
 
+interface ProjectUpdateEvent {
+  eventType: "status" | "output";
+  checkIndex: number;
+}
+
 export class Project {
   readonly project: string;
   readonly path: string;
-  readonly index: number;
   readonly color: ProjectColor;
+  readonly startIndex: number;
 
   private readonly emitter = new EventEmitter();
   private readonly checks: Check[];
-  private readonly handleCheckUpdate = () => {
-    this.emit();
-  };
 
-  constructor(project: ProjectDefinition, projectIndex: number) {
+  constructor(project: ProjectDefinition, startIndex: number) {
     this.project = project.project;
     this.path = project.path;
-    this.index = projectIndex;
     this.color = project.color;
-    this.checks = project.checks.map(
-      (definition) => new Check(definition, this.handleCheckUpdate),
-    );
+    this.startIndex = startIndex;
+    this.checks = project.checks.map((definition, checkIndex) => {
+      const index = this.startIndex + checkIndex;
+      return new Check(definition, index, (eventType) =>
+        this.handleCheckUpdate(eventType, index),
+      );
+    });
     this.waitForCompletion = createWaitForCompletion(
       this.emitter,
       this.isComplete.bind(this),
     );
   }
 
-  subscribe = (listener: () => void) => {
+  subscribe = (listener: (event: ProjectUpdateEvent) => void) => {
     this.emitter.on("update", listener);
     return () => this.emitter.off("update", listener);
+  };
+
+  private handleCheckUpdate = (
+    eventType: "status" | "output",
+    checkIndex: number,
+  ) => {
+    this.emit({ eventType, checkIndex });
   };
 
   getCheck(index: number): Check {
@@ -61,8 +73,8 @@ export class Project {
     };
   }
 
-  private emit() {
-    this.emitter.emit("update");
+  private emit(event: ProjectUpdateEvent) {
+    this.emitter.emit("update", event);
   }
 
   isComplete() {

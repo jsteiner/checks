@@ -102,10 +102,12 @@ test("renders multiple projects with sequential check indexes", () => {
     createProject({
       project: "alpha",
       checks: [first],
+      startIndex: 0,
     }),
     createProject({
       project: "beta",
       checks: [second, third],
+      startIndex: 1,
     }),
   ];
 

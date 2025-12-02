@@ -5,18 +5,26 @@ import { createWaitForCompletion } from "./eventEmitterHelper.js";
 import { Project } from "./Project.js";
 import { combineSummaries } from "./summary.js";
 
+export interface SuiteUpdateEvent {
+  eventType: "status" | "output";
+  checkIndex: number;
+}
+
 export class Suite {
   private readonly emitter = new EventEmitter();
   private readonly projects: Project[];
   private snapshot: SuiteState;
 
   constructor(definition: SuiteDefinition) {
-    this.projects = definition.projects.map(
-      (project, index) => new Project(project, index),
-    );
+    let checkOffset = 0;
+    this.projects = definition.projects.map((project) => {
+      const created = new Project(project, checkOffset);
+      checkOffset += project.checks.length;
+      return created;
+    });
     this.snapshot = this.createState();
-    this.projects.forEach((store) => {
-      store.subscribe(() => this.emit());
+    this.projects.forEach((project) => {
+      project.subscribe((event) => this.emit({ ...event }));
     });
     this.waitForCompletion = createWaitForCompletion(
       this.emitter,
@@ -24,7 +32,7 @@ export class Suite {
     );
   }
 
-  subscribe = (listener: () => void) => {
+  subscribe = (listener: (event: SuiteUpdateEvent) => void) => {
     this.emitter.on("update", listener);
     return () => this.emitter.off("update", listener);
   };
@@ -41,9 +49,9 @@ export class Suite {
 
   toState = (): SuiteState => this.snapshot;
 
-  private emit() {
+  private emit(event: SuiteUpdateEvent) {
     this.snapshot = this.createState();
-    this.emitter.emit("update");
+    this.emitter.emit("update", event);
   }
 
   private isComplete() {

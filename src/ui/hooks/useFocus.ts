@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { CheckState, ProjectState } from "../../types.js";
 
 interface FocusedCheck {
@@ -9,14 +9,14 @@ interface FocusedCheck {
 
 interface UseFocusResult {
   checks: CheckState[];
-  focusedIndex: number | null;
-  focusedProject: ProjectState | null;
   focusedCheck: FocusedCheck | null;
   maxFocusableIndex: number;
-  onFocusChange: (index: number | null) => void;
 }
 
-export function useFocus(projects: ProjectState[]): UseFocusResult {
+export function useFocus(
+  projects: ProjectState[],
+  focusedIndex: number | null,
+): UseFocusResult {
   const projectRanges = useMemo(
     () => createProjectRanges(projects),
     [projects],
@@ -25,24 +25,20 @@ export function useFocus(projects: ProjectState[]): UseFocusResult {
     () => projects.flatMap((project) => project.checks),
     [projects],
   );
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const focusableCount = Math.min(checks.length, 9);
   const maxFocusableIndex = focusableCount - 1;
 
-  const focusedProject = useMemo(
-    () =>
-      focusedIndex === null
-        ? null
-        : findProjectForCheckIndex(projectRanges, focusedIndex),
-    [focusedIndex, projectRanges],
-  );
-
   const focusedCheck = useMemo(() => {
-    if (
-      focusedIndex === null ||
-      focusedProject === null ||
-      checks[focusedIndex] === undefined
-    ) {
+    if (focusedIndex === null || checks[focusedIndex] === undefined) {
+      return null;
+    }
+
+    const focusedProject = findProjectForCheckIndex(
+      projectRanges,
+      focusedIndex,
+    );
+
+    if (focusedProject === null) {
       return null;
     }
 
@@ -51,19 +47,12 @@ export function useFocus(projects: ProjectState[]): UseFocusResult {
       project: focusedProject,
       index: focusedIndex,
     };
-  }, [checks, focusedIndex, focusedProject]);
-
-  const onFocusChange = useCallback((index: number | null) => {
-    setFocusedIndex(index);
-  }, []);
+  }, [checks, focusedIndex, projectRanges]);
 
   return {
     checks,
-    focusedIndex,
-    focusedProject,
     focusedCheck,
     maxFocusableIndex,
-    onFocusChange,
   };
 }
 

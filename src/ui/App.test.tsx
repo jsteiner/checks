@@ -51,14 +51,45 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   frame = await waitForFrameMatch(ink, /first/);
 
   ink.stdin.write("1");
-  frame = await waitForFrameMatch(ink, /alpha/);
+  await tick();
+  frame = stripAnsi(ink.lastFrame() ?? "");
+  assert.match(frame, /alpha/);
   assert.doesNotMatch(frame, /bravo/);
-  const plainFrame = stripAnsi(frame);
-  assert.match(plainFrame, /x or 1 to unfocus · <n> to focus · q to quit/);
+  assert.match(frame, /x or 1 to unfocus · <n> to focus · q to quit/);
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /second/);
   assert.match(frame, /first/);
+
+  ink.stdin.write("1");
+  frame = await waitForFrameMatch(ink, /<n> to focus/);
+  assert.doesNotMatch(frame, /unfocus/);
+
+  ink.unmount();
+});
+
+test("suite view ignores streaming output, focused view receives it", async () => {
+  const store = new Suite({ projects: [SAMPLE_PROJECT] });
+  const { ink } = renderApp(App, store, { interactive: true });
+
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  store.getCheck(0, 0).setOutput("chunk-one");
+  await tick();
+  assert.doesNotMatch(ink.lastFrame() ?? "", /chunk-one/);
+
+  ink.stdin.write("1");
+  await waitForFrameMatch(ink, /chunk-one/);
+
+  store.getCheck(0, 0).setOutput("chunk-two");
+  await waitForFrameMatch(ink, /chunk-two/);
+
+  ink.stdin.write("x");
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  store.getCheck(0, 0).setOutput("chunk-three");
+  await tick();
+  assert.doesNotMatch(ink.lastFrame() ?? "", /chunk-three/);
 
   ink.unmount();
 });

@@ -26,26 +26,29 @@ test("snapshot returns current state as plain objects", () => {
   const store = new Suite({ projects: PROJECTS });
   const snapshot = store.toState();
 
-  assert.deepEqual(snapshot, {
-    projects: PROJECTS.map((project, index) => ({
-      ...project,
-      color: getProjectColor(index),
-      checks: project.checks.map((check) => ({
-        ...check,
-        startedAt: null,
-        output: "",
-        result: { status: "pending" },
-      })),
-      summary: {
-        total: project.checks.length,
-        pending: project.checks.length,
-        passed: 0,
-        failed: 0,
-        aborted: 0,
-        durationMs: 0,
-      },
-      isComplete: false,
+  let checkIndex = 0;
+  const expectedProjects = PROJECTS.map((project) => ({
+    ...project,
+    checks: project.checks.map((check) => ({
+      ...check,
+      index: checkIndex++,
+      startedAt: null,
+      output: "",
+      result: { status: "pending" },
     })),
+    summary: {
+      total: project.checks.length,
+      pending: project.checks.length,
+      passed: 0,
+      failed: 0,
+      aborted: 0,
+      durationMs: 0,
+    },
+    isComplete: false,
+  }));
+
+  assert.deepEqual(snapshot, {
+    projects: expectedProjects,
     summary: {
       total: 3,
       pending: 3,
