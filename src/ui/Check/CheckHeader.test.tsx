@@ -1,10 +1,20 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { render } from "ink-testing-library";
+import { test } from "vitest";
 import { createCheck, createProject } from "../../test/helpers/factories.js";
 import { renderWithLayout, stripAnsi } from "../../test/helpers/ui.jsx";
+import type { CheckState } from "../../types.js";
 import { LayoutProvider } from "../LayoutContext.js";
 import { CheckHeader } from "./CheckHeader.js";
+
+function renderCheckHeader(check: CheckState) {
+  const project = createProject();
+  const { lastFrame } = renderWithLayout(
+    <CheckHeader project={project} check={check} />,
+    [check],
+  );
+  return stripAnsi(lastFrame() ?? "");
+}
 
 test("shows duration to the right of the command after completion", () => {
   const check = createCheck({
@@ -12,13 +22,8 @@ test("shows duration to the right of the command after completion", () => {
     startedAt: 1_000,
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
-  const project = createProject();
-  const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} />,
-    [check],
-  );
 
-  const frame = stripAnsi(lastFrame() ?? "");
+  const frame = renderCheckHeader(check);
   assert.match(frame, /echo hi +0\.50s$/);
 });
 
@@ -27,13 +32,8 @@ test("omits duration while running", () => {
     command: "echo hi",
     status: "running",
   });
-  const project = createProject();
-  const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} />,
-    [check],
-  );
 
-  const frame = stripAnsi(lastFrame() ?? "");
+  const frame = renderCheckHeader(check);
   assert.match(frame, /echo hi/);
   assert.doesNotMatch(frame, /0\.50s/);
 });
@@ -43,13 +43,8 @@ test("truncates commands longer than 20 chars with ellipsis", () => {
     command: "this-is-a-very-long-command-that-exceeds-twenty-characters",
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
-  const project = createProject();
-  const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} />,
-    [check],
-  );
 
-  const frame = stripAnsi(lastFrame() ?? "");
+  const frame = renderCheckHeader(check);
   assert.match(frame, /this-is-a-very-long…/);
   assert.doesNotMatch(frame, /this-is-a-very-long-c/);
 });
@@ -59,13 +54,8 @@ test("does not truncate commands shorter than 20 chars", () => {
     command: "short-cmd",
     result: { status: "passed", finishedAt: 1_500, exitCode: 0 },
   });
-  const project = createProject();
-  const { lastFrame } = renderWithLayout(
-    <CheckHeader project={project} check={check} />,
-    [check],
-  );
 
-  const frame = stripAnsi(lastFrame() ?? "");
+  const frame = renderCheckHeader(check);
   assert.match(frame, /short-cmd/);
   assert.doesNotMatch(frame, /…/);
 });

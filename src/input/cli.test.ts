@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { availableParallelism } from "node:os";
-import test from "node:test";
+import { test } from "vitest";
 import { parseCLIOptions } from "./cli.js";
 
 const DEFAULT_CONCURRENCY = Math.max(

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import type { Input } from "../input/index.js";
 import { getProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
@@ -195,4 +195,32 @@ test("sets checks to pending status before they start", async () => {
     const check = store.getCheck(0, i);
     assert.equal(check.result.status, "passed");
   }
+});
+
+test("handles abort when parent signal fires after executor is already aborted", async () => {
+  const parentController = new AbortController();
+  const checks: Input["projects"][number]["checks"] = [
+    { name: "fail-fast-check", command: "fail", cwd: "/tmp/project" },
+  ];
+
+  const spawn: SpawnFunction = () => {
+    const child = createFakeSpawnedProcess();
+    // Fail immediately, which will trigger internal abort due to failFast
+    process.nextTick(() => {
+      child.emitClose(1, null);
+      // Fire parent abort after internal abort has already happened
+      setTimeout(() => parentController.abort(), 5);
+    });
+    return child;
+  };
+
+  const { store } = await executeChecks(
+    checks,
+    { failFast: true },
+    spawn,
+    parentController,
+  );
+
+  const first = store.getCheck(0, 0);
+  assert.equal(first.result.status, "failed");
 });

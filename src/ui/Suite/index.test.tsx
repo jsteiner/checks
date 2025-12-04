@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { render } from "ink-testing-library";
+import { test } from "vitest";
 import { createCheck, createProject } from "../../test/helpers/factories.js";
 import { stripAnsi } from "../../test/helpers/ui.jsx";
 import type { ProjectState } from "../../types.js";
@@ -101,11 +101,13 @@ test("renders multiple projects with sequential check indexes", () => {
   const projects: ProjectState[] = [
     createProject({
       project: "alpha",
+      path: "/alpha",
       checks: [first],
       startIndex: 0,
     }),
     createProject({
       project: "beta",
+      path: "/beta",
       checks: [second, third],
       startIndex: 1,
     }),

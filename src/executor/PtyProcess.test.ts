@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { mock, test } from "node:test";
 import type { IPty } from "node-pty";
+import { test, vi } from "vitest";
 import { createCloseEventPromise } from "../test/helpers/ptyProcess.js";
 import { PtyProcess } from "./PtyProcess.js";
 
@@ -120,7 +120,7 @@ test("spawns with provided env and process settings", async () => {
   });
   const fakePty = createFakePty(999);
 
-  const spawn = mock.fn((file, args, options) => {
+  const spawn = vi.fn((file, args, options) => {
     assert.equal(file, "/bin/zsh");
     assert.deepEqual(args, ["-c", "echo hi"]);
     assert.deepEqual(options, {
@@ -149,7 +149,7 @@ test("spawns with provided env and process settings", async () => {
 
   assert.equal(child.pid, 999);
   assert.equal(output, "hello");
-  assert.equal(spawn.mock.callCount(), 1);
+  assert.equal(spawn.mock.calls.length, 1);
 
   const closeEvent = await closeEventPromise;
   assert.deepEqual(closeEvent, { code: 0, signal: null });
@@ -159,14 +159,14 @@ test("uses shell env var for spawn", () => {
   const env = { SHELL: "/bin/zsh" };
   const processStub = createProcessStub({ env });
   const fakePty = createFakePty();
-  const spawn = mock.fn((file, args) => {
+  const spawn = vi.fn((file, args) => {
     assert.equal(file, env.SHELL);
     assert.deepEqual(args, ["-c", "dir"]);
     return fakePty;
   });
 
   new PtyProcess({ process: processStub, spawn }).spawn("dir", "/tmp/project");
-  assert.equal(spawn.mock.callCount(), 1);
+  assert.equal(spawn.mock.calls.length, 1);
 });
 
 test("kills the process group when possible and records the signal", async () => {
@@ -266,7 +266,10 @@ test("kills PTY directly when pid is missing", async () => {
   assert.deepEqual(fakePty.killCalls, ["SIGTERM"]);
 });
 
-test("handles null exitCode in close event", async () => {
+async function testExitEvent(
+  exitCode: number | null | undefined,
+  signal: number | null | undefined,
+) {
   const fakePty = createFakePty();
   const child = new PtyProcess({ spawn: () => fakePty }).spawn(
     "noop",
@@ -274,42 +277,25 @@ test("handles null exitCode in close event", async () => {
   );
 
   const closeEventPromise = createCloseEventPromise(child);
+  fakePty.emitExit(exitCode, signal);
 
-  fakePty.emitExit(null, null);
+  return await closeEventPromise;
+}
 
-  const closeEvent = await closeEventPromise;
+test("handles null exitCode in close event", async () => {
+  const closeEvent = await testExitEvent(null, null);
   assert.strictEqual(closeEvent.code, null);
   assert.strictEqual(closeEvent.signal, null);
 });
 
 test("handles exit with signal code", async () => {
-  const fakePty = createFakePty();
-  const child = new PtyProcess({ spawn: () => fakePty }).spawn(
-    "noop",
-    "/tmp/project",
-  );
-
-  const closeEventPromise = createCloseEventPromise(child);
-
-  fakePty.emitExit(null, 15);
-
-  const closeEvent = await closeEventPromise;
+  const closeEvent = await testExitEvent(null, 15);
   assert.strictEqual(closeEvent.code, null);
   assert.strictEqual(closeEvent.signal, "SIGTERM");
 });
 
 test("handles exit with undefined exitCode and signal", async () => {
-  const fakePty = createFakePty();
-  const child = new PtyProcess({ spawn: () => fakePty }).spawn(
-    "noop",
-    "/tmp/project",
-  );
-
-  const closeEventPromise = createCloseEventPromise(child);
-
-  fakePty.emitExit(undefined, undefined);
-
-  const closeEvent = await closeEventPromise;
+  const closeEvent = await testExitEvent(undefined, undefined);
   assert.strictEqual(closeEvent.code, null);
   assert.strictEqual(closeEvent.signal, null);
 });

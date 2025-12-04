@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { render } from "ink-testing-library";
+import { test } from "vitest";
 import { createCheck } from "../../test/helpers/factories.js";
 import { CheckOutput } from "./CheckOutput.js";
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
 import { EXIT_CODES, runChecks } from "./index.js";
 import type { Suite } from "./state/Suite.js";
 import { createRenderWithAbort } from "./test/helpers/app.jsx";
@@ -211,4 +211,20 @@ test("handles non-Error exceptions during config loading", async () => {
 
   assert.equal(exitCode, EXIT_CODES.orchestratorError);
   assert.ok(errors.length > 0);
+});
+
+test("handles executor run exception", async () => {
+  const errors: string[] = [];
+  const exitCode = await runTestConfig(
+    createConfigData(),
+    () => ({
+      run: async () => {
+        throw new Error("executor failed");
+      },
+    }),
+    (message) => errors.push(message),
+  );
+
+  assert.equal(exitCode, EXIT_CODES.orchestratorError);
+  assert.match(errors[0] ?? "", /executor failed/);
 });

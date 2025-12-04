@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "description": "A concise parallelized local CI runner for humans and coding agents",
   "license": "MIT",
-  "keywords": ["checks", "static analysis", "testing", "cli", "parallel", "concurrent", "runner"],
+  "keywords": [
+    "checks",
+    "static analysis",
+    "testing",
+    "cli",
+    "parallel",
+    "concurrent",
+    "runner"
+  ],
   "author": {
     "name": "Josh Steiner"
   },
@@ -20,7 +28,7 @@
     "lint:biome": "biome check --write --error-on-warnings",
     "lint:unused": "knip",
     "lint:dupes": "jscpd --config jscpd.json",
-    "test": "tsx scripts/run-tests.ts",
+    "test": "vitest run --coverage",
     "checks": "pnpm build; node dist/index.js",
     "prepare": "pnpm build"
   },
@@ -28,13 +36,12 @@
     "@biomejs/biome": "^2.3.7",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.6",
-    "@types/react-test-renderer": "^19.1.0",
+    "@vitest/coverage-v8": "^4.0.15",
     "ink-testing-library": "^4.0.0",
     "jscpd": "^4.0.5",
     "knip": "^5.70.2",
-    "react-test-renderer": "19.2.0",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
   },
   "dependencies": {
     "@xterm/addon-serialize": "^0.13.0",

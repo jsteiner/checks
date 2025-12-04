@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
+import { test } from "vitest";
 import { getProjectColor } from "../input/projectColors.js";
 import { Suite } from "./Suite.js";
 
@@ -94,4 +94,13 @@ test("waits for completion across projects", async () => {
   assert.equal(store.getCheck(0, 0).status, "passed");
   assert.equal(store.getCheck(0, 1).status, "failed");
   assert.equal(store.getCheck(1, 0).status, "passed");
+});
+
+test("throws when accessing invalid project index", () => {
+  const store = new Suite({ projects: PROJECTS });
+
+  assert.throws(
+    () => store.getCheck(999, 0),
+    /Project not found for index 999/,
+  );
 });

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { getProjectColor } from "../input/projectColors.js";
 import { Suite } from "../state/Suite.js";
 import { renderApp } from "../test/helpers/app.jsx";

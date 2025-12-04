@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
 import {
   createConfigFile,
   createNestedConfigDirs,
@@ -124,4 +124,35 @@ test("recursively discovers configs from specified directory", async () => {
 
   assert.deepEqual(names, ["root", "nested"]);
   assert.deepEqual(paths, [setup.rootConfigPath, setup.nestedConfigPath]);
+});
+
+test("formats filter description when no checks match after filtering", async () => {
+  const configPath = await createConfigFile(
+    createConfigData({
+      project: "test-project",
+      checks: [{ name: "lint", command: "pnpm lint" }],
+    }),
+  );
+  const baseDir = path.dirname(configPath);
+
+  await assert.rejects(
+    async () =>
+      buildInput([
+        "node",
+        "checks",
+        baseDir,
+        "--only",
+        "test",
+        "--exclude",
+        "lint",
+      ]),
+    (error) => {
+      assert.ok(error instanceof Error);
+      assert.match(
+        error.message,
+        /No checks matched after applying filters \(--only test, --exclude lint\)/,
+      );
+      return true;
+    },
+  );
 });

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { getProjectColor } from "../input/projectColors.js";
 import { Project } from "../state/Project.js";
 import { createFakeSpawnedProcess } from "../test/helpers/fakeSpawnedProcess.js";
@@ -149,6 +149,40 @@ test("captures child error events and marks the check failed", async () => {
   assert.ok(first.output.includes("child blew up"));
 });
 
+test("handles terminal resize with output update", async () => {
+  let resizeCallback: ((cols: number, rows: number) => void) | undefined;
+  const spawn = (
+    _cmd: string,
+    _cwd: string,
+    onResize?: (cols: number, rows: number) => void,
+  ) => {
+    resizeCallback = onResize;
+    const child = createFakeSpawnedProcess();
+    const stdout = new (require("node:events").EventEmitter)();
+    child.stdout = stdout as NodeJS.ReadableStream;
+    // Emit some data first
+    process.nextTick(() => {
+      stdout.emit("data", Buffer.from("test output\n"));
+      // Then resize
+      if (resizeCallback) {
+        resizeCallback(120, 40);
+      }
+      child.emitClose(0, null);
+    });
+    return child;
+  };
+
+  const { store } = await executeCheck(
+    { name: "resize-test", command: "noop", cwd: "/tmp/project" },
+    spawn,
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const first = store.getCheck(0);
+
+  assert.ok(first.output.includes("test output"));
+});
+
 test("aborts a running check when the abort signal fires", async () => {
   const controller = new AbortController();
   let killed = false;
@@ -219,4 +253,59 @@ test("skips killing when the child is already marked killed", async () => {
 
   assert.equal(status, "aborted");
   assert.equal(killCalled, false);
+});
+
+test("captures stdout data and updates output", async () => {
+  const spawn = () => {
+    const child = createFakeSpawnedProcess();
+    const stdout = new (require("node:events").EventEmitter)();
+    child.stdout = stdout as NodeJS.ReadableStream;
+    process.nextTick(() => {
+      stdout.emit("data", Buffer.from("test output\n"));
+      process.nextTick(() => child.emitClose(0, null));
+    });
+    return child;
+  };
+
+  const { store, status } = await executeCheck(
+    { name: "stdout-test", command: "noop", cwd: "/tmp/project" },
+    spawn,
+  );
+  // Wait for async output processing
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  const first = store.getCheck(0);
+
+  assert.equal(status, "passed");
+  assert.ok(first.output.includes("test output"));
+});
+
+test("handles terminal resize events", async () => {
+  let resizeCallback: ((columns: number, rows: number) => void) | undefined;
+
+  const spawn: SpawnFunction = (
+    _command: string,
+    _cwd: string,
+    onResize?: (columns: number, rows: number) => void,
+  ) => {
+    resizeCallback = onResize;
+    const child = createFakeSpawnedProcess();
+    process.nextTick(() => child.emitClose(0, null));
+    return child;
+  };
+
+  const { status } = await executeCheck(
+    { name: "resize-test", command: "noop", cwd: "/tmp/project" },
+    spawn,
+  );
+
+  // Trigger a resize event
+  if (resizeCallback) {
+    resizeCallback(100, 30);
+  }
+
+  assert.equal(status, "passed");
+  assert.ok(
+    resizeCallback !== undefined,
+    "onResize callback should be provided",
+  );
 });

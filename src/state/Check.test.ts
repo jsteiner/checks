@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { Check } from "./Check.js";
 
 const definition = { name: "sample", command: "echo hi", cwd: "/tmp/project" };

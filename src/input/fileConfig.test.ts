@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
 import {
   createConfigFile,
   createRawConfigFile,
@@ -108,4 +108,83 @@ test("parses an optional project color", async () => {
 
   const config = await loadFileConfig(filePath);
   assert.equal(config.color, "magenta");
+});
+
+test("formats error with empty path", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: "not-an-array",
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.ok(error.message.includes("checks must be an array"));
+      return true;
+    },
+  );
+});
+
+test("formats error with 'received undefined' message", async () => {
+  const filePath = await createConfigFile({
+    checks: [{ name: "test", command: "echo test" }],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /project is required/);
+      return true;
+    },
+  );
+});
+
+test("requires check name to be non-empty", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: [{ name: "", command: "echo test" }],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /name/);
+      return true;
+    },
+  );
+});
+
+test("requires check command to be non-empty", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: [{ name: "test", command: "" }],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /command/);
+      return true;
+    },
+  );
+});
+
+test("formats error message 'Required' in issue path", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: [{ command: "echo test" }],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /name is required/);
+      return true;
+    },
+  );
 });

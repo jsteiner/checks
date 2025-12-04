@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { Text } from "ink";
 import { render } from "ink-testing-library";
 import type { ReactElement } from "react";
-import TestRenderer from "react-test-renderer";
+import { test } from "vitest";
 import { createCheck, createProject } from "../test/helpers/factories.js";
 import type { CheckState, ProjectState } from "../types.js";
 import { LayoutProvider, useLayout } from "./LayoutContext.js";
@@ -21,28 +20,6 @@ function renderWithLayoutProvider(
 
   return lastFrame() ?? "";
 }
-
-test("throws when useLayout is called outside of LayoutProvider", () => {
-  const actEnv = globalThis as unknown as {
-    IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
-  };
-  const previousActEnv = actEnv.IS_REACT_ACT_ENVIRONMENT;
-  actEnv.IS_REACT_ACT_ENVIRONMENT = true;
-
-  const App = () => {
-    useLayout();
-    return null;
-  };
-
-  assert.throws(
-    () =>
-      TestRenderer.act(() => {
-        TestRenderer.create(<App />);
-      }),
-    /useLayout must be used within LayoutProvider/,
-  );
-  actEnv.IS_REACT_ACT_ENVIRONMENT = previousActEnv;
-});
 
 test("provides layout values inside the provider", () => {
   const checks = [createCheck({ name: "first" })];

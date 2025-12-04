@@ -3,11 +3,13 @@
   "entry": [
     "src/index.tsx",
     "src/**/*.test.{ts,tsx}",
-    "scripts/**/*.ts"
+    "vitest.config.ts"
   ],
   "project": [
-    "src/**/*.{ts,tsx}",
-    "scripts/**/*.ts"
+    "src/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "src/test/setup.ts"
   ],
   "treatConfigHintsAsErrors": true,
   "ignoreDependencies": ["node-gyp"]

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import { TerminalBuffer } from "./TerminalBuffer.js";
 
 function buildTerminalBuffer(): TerminalBuffer {
@@ -146,5 +146,21 @@ describe("TerminalBuffer", () => {
     await buffer.write("\r\u001B[K"); // Return to start, erase line
     await buffer.write("Done!");
     assert.equal(buffer.getRenderedOutput(), "Done!");
+  });
+
+  test("resizes terminal with explicit rows", async () => {
+    const buffer = buildTerminalBuffer();
+    await buffer.write("Test");
+    buffer.resize(100, 30);
+    const output = buffer.getRenderedOutput();
+    assert.ok(output.includes("Test"));
+  });
+
+  test("resizes terminal with default rows", async () => {
+    const buffer = buildTerminalBuffer();
+    await buffer.write("Test");
+    buffer.resize(120);
+    const output = buffer.getRenderedOutput();
+    assert.ok(output.includes("Test"));
   });
 });

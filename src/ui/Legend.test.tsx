@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
+import { test } from "vitest";
 import { stripAnsi, waitForFrameMatch } from "../test/helpers/ui.jsx";
 import { useHotkeys } from "./hooks/useHotkeys.js";
 import { Legend } from "./Legend.js";
@@ -60,6 +60,15 @@ test("shows unfocus hotkey with the focused index", async () => {
 
   const frame = await waitForFrameMatch(ink, /focused=1/);
   assert.match(frame, /x or 2 to unfocus/);
+
+  ink.unmount();
+});
+
+test("renders nothing when not interactive", () => {
+  const ink = render(<Legend interactive={false} hotkeys={[]} />);
+
+  const frame = ink.lastFrame();
+  assert.equal(frame, "");
 
   ink.unmount();
 });

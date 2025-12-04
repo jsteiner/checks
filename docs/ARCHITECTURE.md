@@ -255,7 +255,7 @@ Uses discriminated unions and strict TypeScript for type safety.
 ## Testing Infrastructure
 
 **Test Setup:**
-- Framework: Node.js native test runner (via `tsx`)
+- Framework: Vitest
 - Coverage: 95% threshold for lines, branches, and functions
 - Test helpers: `src/test/helpers/`
 - Co-located tests: `.test.ts` suffix alongside source files
@@ -319,7 +319,7 @@ Clear boundaries between layers:
 - `@biomejs/biome`: Linting and formatting
 - `knip`: Unused code detection
 - `jscpd`: Code duplication detection
-- `tsx`: TypeScript execution for tests
+- `vitest`: Test framework with coverage
 - `ink-testing-library`: Testing Ink components
 
 ## Build and Distribution

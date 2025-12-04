@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { render } from "ink-testing-library";
+import { test } from "vitest";
 import { Executor } from "./executor/index.js";
 import type { Input } from "./input/index.js";
 import { getProjectColor } from "./input/projectColors.js";

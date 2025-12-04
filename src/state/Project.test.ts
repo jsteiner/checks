@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
+import { test } from "vitest";
 import type { CheckResult } from "../types.js";
 import { Project } from "./Project.js";
 

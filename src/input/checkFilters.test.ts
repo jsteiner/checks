@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { filterProjectsByRules } from "./checkFilters.js";
 import type { CheckFilterRule } from "./cli.js";
 
@@ -19,6 +19,8 @@ const sampleProjects = [
   { project: "beta", path: "foo", color: "red", checks: sampleChecks },
 ];
 
+const projectNames = ["alpha", "alpha:web", "alphabet", "beta"] as const;
+
 type Summary = { project: string; checks: string[] };
 
 const summarize = (projects: typeof sampleProjects): Summary[] =>
@@ -34,6 +36,43 @@ function assertFiltered(
   assert.deepEqual(summarize(projects), expected);
 }
 
+function expectAllProjectsWithChecks(checkNames: string[]): Summary[] {
+  return projectNames.map((project) => ({ project, checks: checkNames }));
+}
+
+test("handles empty pattern", () => {
+  const filters: CheckFilterRule[] = [{ type: "only", pattern: "" }];
+
+  const filtered = filterProjectsByRules(sampleProjects, filters);
+
+  // Empty pattern should match all checks
+  assertFiltered(filtered, [
+    { project: "alpha", checks: sampleChecks.map((c) => c.name) },
+    { project: "alpha:web", checks: sampleChecks.map((c) => c.name) },
+    { project: "alphabet", checks: sampleChecks.map((c) => c.name) },
+    { project: "beta", checks: sampleChecks.map((c) => c.name) },
+  ]);
+});
+
+test("handles pattern with empty project glob", () => {
+  const filters: CheckFilterRule[] = [{ type: "only", pattern: "/lint" }];
+
+  const filtered = filterProjectsByRules(sampleProjects, filters);
+
+  assertFiltered(filtered, expectAllProjectsWithChecks(["lint"]));
+});
+
+test("handles pattern with empty check glob", () => {
+  const filters: CheckFilterRule[] = [{ type: "only", pattern: "alpha/" }];
+
+  const filtered = filterProjectsByRules(sampleProjects, filters);
+
+  // alpha/ should match all checks in alpha project
+  assertFiltered(filtered, [
+    { project: "alpha", checks: sampleChecks.map((c) => c.name) },
+  ]);
+});
+
 test("filters projects and checks together", () => {
   const filters: CheckFilterRule[] = [{ type: "only", pattern: "alpha/lint" }];
 
@@ -47,12 +86,7 @@ test("filters checks by exact matches", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assertFiltered(filtered, [
-    { project: "alpha", checks: ["lint"] },
-    { project: "alpha:web", checks: ["lint"] },
-    { project: "alphabet", checks: ["lint"] },
-    { project: "beta", checks: ["lint"] },
-  ]);
+  assertFiltered(filtered, expectAllProjectsWithChecks(["lint"]));
 });
 
 test("filters checks by single glob matches with an optional first :", () => {
@@ -60,12 +94,7 @@ test("filters checks by single glob matches with an optional first :", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assertFiltered(filtered, [
-    { project: "alpha", checks: ["lint", "lint:deep"] },
-    { project: "alpha:web", checks: ["lint", "lint:deep"] },
-    { project: "alphabet", checks: ["lint", "lint:deep"] },
-    { project: "beta", checks: ["lint", "lint:deep"] },
-  ]);
+  assertFiltered(filtered, expectAllProjectsWithChecks(["lint", "lint:deep"]));
 });
 
 test("throws on globs mid-string", () => {
@@ -91,15 +120,10 @@ test("filters checks by double glob matches with an optional first :", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assertFiltered(filtered, [
-    { project: "alpha", checks: ["lint", "lint:deep", "lint:deep:check"] },
-    {
-      project: "alpha:web",
-      checks: ["lint", "lint:deep", "lint:deep:check"],
-    },
-    { project: "alphabet", checks: ["lint", "lint:deep", "lint:deep:check"] },
-    { project: "beta", checks: ["lint", "lint:deep", "lint:deep:check"] },
-  ]);
+  assertFiltered(
+    filtered,
+    expectAllProjectsWithChecks(["lint", "lint:deep", "lint:deep:check"]),
+  );
 });
 
 test("including an : does not include the bare term", () => {
@@ -107,12 +131,7 @@ test("including an : does not include the bare term", () => {
 
   const filtered = filterProjectsByRules(sampleProjects, filters);
 
-  assertFiltered(filtered, [
-    { project: "alpha", checks: ["lint:deep"] },
-    { project: "alpha:web", checks: ["lint:deep"] },
-    { project: "alphabet", checks: ["lint:deep"] },
-    { project: "beta", checks: ["lint:deep"] },
-  ]);
+  assertFiltered(filtered, expectAllProjectsWithChecks(["lint:deep"]));
 });
 
 test("filters projects with glob matches", () => {
