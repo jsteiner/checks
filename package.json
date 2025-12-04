@@ -1,8 +1,14 @@
 {
-  "name": "checks",
+  "name": "checks-cli",
   "version": "0.1.0",
-  "description": "checks CLI",
+  "description": "A concise parallelized local CI runner for humans and coding agents",
   "license": "MIT",
+  "keywords": ["checks", "static analysis", "testing", "cli", "parallel", "concurrent", "runner"],
+  "author": {
+    "name": "Josh Steiner"
+  },
+  "homepage": "https://github.com/jsteiner/checks",
+  "repository": "github:jsteiner/checks",
   "type": "module",
   "bin": {
     "checks": "dist/index.js"
@@ -18,8 +24,6 @@
     "checks": "pnpm build; node dist/index.js",
     "prepare": "pnpm build"
   },
-  "keywords": [],
-  "author": "",
   "devDependencies": {
     "@biomejs/biome": "^2.3.7",
     "@types/node": "^24.10.1",
