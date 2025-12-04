@@ -10,6 +10,26 @@ To break that down:
 
 ![](media/screenshot.png)
 
+## Installation
+
+npm:
+
+```bash
+npm install -D checks-cli
+```
+
+pnpm:
+
+```bash
+pnpm add -D checks-cli
+```
+
+yarn:
+
+```bash
+yarn add -D checks-cli
+```
+
 ## Configuration
 
 `checks` looks for `checks.config.json` in the current working directory. When `--recursive` is set it searches subdirectories recursively, and each project's commands run from the directory where its config file lives.
