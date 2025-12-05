@@ -1,5 +1,6 @@
 import { availableParallelism } from "node:os";
 import { Command } from "commander";
+import packageJson from "../../package.json" with { type: "json" };
 
 export type CheckFilterRule = {
   type: "only" | "exclude";
@@ -25,6 +26,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
 
   program
     .name("checks")
+    .version(packageJson.version, "-v, --version", "display version number")
     .argument(
       "[directory]",
       "directory to run checks from (default: current directory)",
