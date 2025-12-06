@@ -22,3 +22,12 @@ You have access to the following `pnpm` scripts:
 
 - Always read `docs/ARCHITECTURE.md` when you first start up.
 - Update `docs/ARCHITECTURE.md` when making meaningful architectural changes.
+
+# tmux-cli Command to interact with CLI applications
+
+`tmux-cli` is a bash command that enables coding agents to control CLI applications
+running in separate tmux panes - launch programs, send input, capture output,
+and manage interactive sessions. Run `tmux-cli --help` for detailed usage
+instructions.
+
+Use it to test `checks` in interactive/watch mode.
