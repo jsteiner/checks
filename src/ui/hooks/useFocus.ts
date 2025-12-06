@@ -25,8 +25,7 @@ export function useFocus(
     () => projects.flatMap((project) => project.checks),
     [projects],
   );
-  const focusableCount = Math.min(checks.length, 9);
-  const maxFocusableIndex = focusableCount - 1;
+  const maxFocusableIndex = checks.length - 1;
 
   const focusedCheck = useMemo(() => {
     if (focusedIndex === null || checks[focusedIndex] === undefined) {

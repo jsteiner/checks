@@ -2,9 +2,18 @@ import { useInput } from "ink";
 import type { MutableRefObject } from "react";
 import { useMemo, useRef } from "react";
 import type { HotkeyConfig } from "../types.js";
+import { getMatchedIndices } from "../utils/filterChecks.js";
 
 type Hotkey = HotkeyConfig & {
-  match?: (input: string) => boolean;
+  match?: (
+    input: string,
+    key: {
+      backspace?: boolean;
+      escape?: boolean;
+      delete?: boolean;
+      return?: boolean;
+    },
+  ) => boolean;
   handler: (input: string) => void;
 };
 
@@ -16,6 +25,8 @@ interface UseHotkeysOptions {
   onFocusChange: (index: number | null) => void;
   onAbort: () => void;
   exit: () => void;
+  numericBuffer: string | null;
+  onNumericBufferChange: (buffer: string | null) => void;
 }
 
 export function useHotkeys({
@@ -26,14 +37,18 @@ export function useHotkeys({
   onFocusChange,
   onAbort,
   exit,
+  numericBuffer,
+  onNumericBufferChange,
 }: UseHotkeysOptions): HotkeyConfig[] {
   const focusedIndexRef = useRef(focusedIndex);
   const maxFocusableIndexRef = useRef(maxFocusableIndex);
   const isCompleteRef = useRef(isComplete);
+  const numericBufferRef = useRef(numericBuffer);
 
   focusedIndexRef.current = focusedIndex;
   maxFocusableIndexRef.current = maxFocusableIndex;
   isCompleteRef.current = isComplete;
+  numericBufferRef.current = numericBuffer;
 
   const hotkeys = useMemo(
     () =>
@@ -42,17 +57,27 @@ export function useHotkeys({
         focusedIndexRef,
         maxFocusableIndexRef,
         isCompleteRef,
+        numericBuffer,
+        numericBufferRef,
         onFocusChange,
         onAbort,
+        onNumericBufferChange,
         exit,
       }),
-    [exit, focusedIndex, onAbort, onFocusChange],
+    [
+      exit,
+      focusedIndex,
+      numericBuffer,
+      onAbort,
+      onFocusChange,
+      onNumericBufferChange,
+    ],
   );
 
   useInput(
-    (input) => {
+    (input, key) => {
       const matchedHotkey = hotkeys.find((hotkey) => {
-        if (hotkey.match) return hotkey.match(input);
+        if (hotkey.match) return hotkey.match(input, key);
         return hotkey.keys === input;
       });
 
@@ -76,39 +101,71 @@ function createHotkeys({
   focusedIndexRef,
   maxFocusableIndexRef,
   isCompleteRef,
+  numericBuffer,
+  numericBufferRef,
   onFocusChange,
   onAbort,
+  onNumericBufferChange,
   exit,
 }: {
   focusedIndex: number | null;
   focusedIndexRef: MutableRefObject<number | null>;
   maxFocusableIndexRef: MutableRefObject<number>;
   isCompleteRef: MutableRefObject<boolean>;
+  numericBuffer: string | null;
+  numericBufferRef: MutableRefObject<string | null>;
   onFocusChange: (index: number | null) => void;
   onAbort: () => void;
+  onNumericBufferChange: (buffer: string | null) => void;
   exit: () => void;
 }): Hotkey[] {
   const hotkeys: Hotkey[] = [];
-
-  if (focusedIndex !== null) {
-    hotkeys.push(
-      createUnfocusHotkeyHandler({
-        focusedIndex,
-        focusedIndexRef,
-        onFocusChange,
-      }),
-    );
-  }
 
   hotkeys.push(
     createFocusHotkeyHandler({
       focusedIndexRef,
       maxFocusableIndexRef,
+      numericBufferRef,
       onFocusChange,
+      onNumericBufferChange,
     }),
   );
 
-  hotkeys.push(createQuitHotkeyHandler({ isCompleteRef, onAbort, exit }));
+  if (numericBuffer !== null) {
+    hotkeys.push(
+      createEnterHotkeyHandler({
+        focusedIndex,
+        focusedIndexRef,
+        maxFocusableIndexRef,
+        numericBuffer,
+        onFocusChange,
+        onNumericBufferChange,
+      }),
+    );
+    hotkeys.push(
+      createEscapeHotkeyHandler({
+        onNumericBufferChange,
+      }),
+    );
+    hotkeys.push(
+      createBackspaceHotkeyHandler({
+        numericBufferRef,
+        onNumericBufferChange,
+      }),
+    );
+  } else {
+    if (focusedIndex !== null) {
+      hotkeys.push(
+        createUnfocusHotkeyHandler({
+          focusedIndex,
+          focusedIndexRef,
+          onFocusChange,
+        }),
+      );
+    }
+
+    hotkeys.push(createQuitHotkeyHandler({ isCompleteRef, onAbort, exit }));
+  }
 
   return hotkeys;
 }
@@ -116,41 +173,42 @@ function createHotkeys({
 function createFocusHotkeyHandler({
   focusedIndexRef,
   maxFocusableIndexRef,
+  numericBufferRef,
   onFocusChange,
+  onNumericBufferChange,
 }: {
   focusedIndexRef: MutableRefObject<number | null>;
   maxFocusableIndexRef: MutableRefObject<number>;
+  numericBufferRef: MutableRefObject<string | null>;
   onFocusChange: (index: number | null) => void;
+  onNumericBufferChange: (buffer: string | null) => void;
 }): Hotkey {
   return {
     keys: "<n>",
     description: "focus",
-    match: (input) => parseNumberKey(input) !== null,
+    match: (input) => parseDigit(input) !== null,
     handler: (input) => {
-      const numberKey = parseNumberKey(input);
-      if (numberKey === null) return;
-      if (numberKey > maxFocusableIndexRef.current) return;
+      const currentBuffer = numericBufferRef.current ?? "";
+      const newBuffer = currentBuffer + input;
 
-      const currentFocusedIndex = focusedIndexRef.current;
-      if (currentFocusedIndex !== null && numberKey === currentFocusedIndex) {
-        onFocusChange(null);
+      const totalChecks = maxFocusableIndexRef.current + 1;
+      const matchedIndices = getMatchedIndices(totalChecks, newBuffer);
+
+      if (matchedIndices.length === 0) {
         return;
       }
 
-      onFocusChange(numberKey);
+      if (matchedIndices.length === 1) {
+        handleFocusToggle(
+          matchedIndices[0] as number,
+          focusedIndexRef,
+          onFocusChange,
+          onNumericBufferChange,
+        );
+      } else {
+        onNumericBufferChange(newBuffer);
+      }
     },
-  };
-}
-
-function createUnfocusHotkey({
-  focusedIndex,
-}: {
-  focusedIndex: number;
-}): HotkeyConfig {
-  const displayIndex = focusedIndex + 1;
-  return {
-    keys: `x or ${displayIndex}`,
-    description: "unfocus",
   };
 }
 
@@ -163,14 +221,18 @@ function createUnfocusHotkeyHandler({
   focusedIndexRef: MutableRefObject<number | null>;
   onFocusChange: (index: number | null) => void;
 }): Hotkey {
+  const displayIndex = focusedIndex + 1;
   return {
-    ...createUnfocusHotkey({ focusedIndex }),
+    keys: `x or ${displayIndex}`,
+    description: "unfocus",
     match: (input) => {
+      if (input === "x") return true;
+
       const currentFocusedIndex = focusedIndexRef.current;
       if (currentFocusedIndex === null) return false;
 
-      const numberKey = parseNumberKey(input);
-      return input === "x" || numberKey === currentFocusedIndex;
+      const currentDisplayIndex = (currentFocusedIndex + 1).toString();
+      return input === currentDisplayIndex;
     },
     handler: () => onFocusChange(null),
   };
@@ -197,9 +259,93 @@ function createQuitHotkeyHandler({
   };
 }
 
-function parseNumberKey(input: string): number | null {
+function parseDigit(input: string): string | null {
   if (input.length !== 1) return null;
   const code = input.charCodeAt(0);
-  if (code < 49 || code > 57) return null; // 1-9
-  return Number.parseInt(input, 10) - 1;
+  if (code < 48 || code > 57) return null; // 0-9 (ASCII 48-57)
+  return input;
+}
+
+function handleFocusToggle(
+  matchedIndex: number,
+  focusedIndexRef: MutableRefObject<number | null>,
+  onFocusChange: (index: number | null) => void,
+  onNumericBufferChange: (buffer: string | null) => void,
+): void {
+  const currentFocusedIndex = focusedIndexRef.current;
+  onFocusChange(currentFocusedIndex === matchedIndex ? null : matchedIndex);
+  onNumericBufferChange(null);
+}
+
+function createEnterHotkeyHandler({
+  focusedIndex,
+  focusedIndexRef,
+  maxFocusableIndexRef,
+  numericBuffer,
+  onFocusChange,
+  onNumericBufferChange,
+}: {
+  focusedIndex: number | null;
+  focusedIndexRef: MutableRefObject<number | null>;
+  maxFocusableIndexRef: MutableRefObject<number>;
+  numericBuffer: string;
+  onFocusChange: (index: number | null) => void;
+  onNumericBufferChange: (buffer: string | null) => void;
+}): Hotkey {
+  const totalChecks = maxFocusableIndexRef.current + 1;
+  const matchedIndices = getMatchedIndices(totalChecks, numericBuffer);
+  const willUnfocus =
+    matchedIndices.length > 0 && matchedIndices[0] === focusedIndex;
+
+  return {
+    keys: "enter",
+    description: willUnfocus ? "unfocus" : `focus ${numericBuffer}`,
+    match: (_input, key) => key.return === true,
+    handler: () => {
+      if (matchedIndices.length > 0) {
+        handleFocusToggle(
+          matchedIndices[0] as number,
+          focusedIndexRef,
+          onFocusChange,
+          onNumericBufferChange,
+        );
+      }
+    },
+  };
+}
+
+function createEscapeHotkeyHandler({
+  onNumericBufferChange,
+}: {
+  onNumericBufferChange: (buffer: string | null) => void;
+}): Hotkey {
+  return {
+    keys: "escape",
+    description: "cancel",
+    match: (_input, key) => key.escape === true,
+    handler: () => {
+      onNumericBufferChange(null);
+    },
+  };
+}
+
+function createBackspaceHotkeyHandler({
+  numericBufferRef,
+  onNumericBufferChange,
+}: {
+  numericBufferRef: MutableRefObject<string | null>;
+  onNumericBufferChange: (buffer: string | null) => void;
+}): Hotkey {
+  return {
+    keys: "backspace",
+    description: "delete digit",
+    match: (_input, key) => key.backspace === true || key.delete === true,
+    handler: () => {
+      const current = numericBufferRef.current;
+      if (!current) return;
+
+      const newBuffer = current.slice(0, -1);
+      onNumericBufferChange(newBuffer.length === 0 ? null : newBuffer);
+    },
+  };
 }

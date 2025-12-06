@@ -90,6 +90,8 @@ function LegendWithLabel({
     maxFocusableIndex,
     onAbort: () => {},
     onFocusChange: () => {},
+    numericBuffer: null,
+    onNumericBufferChange: () => {},
   });
 
   return (

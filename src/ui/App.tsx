@@ -1,7 +1,6 @@
-import { useApp } from "ink";
+import { Box, Spacer, useApp } from "ink";
 import {
   type RefObject,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -9,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import type { Suite as SuiteStore, SuiteUpdateEvent } from "../state/Suite.js";
+import { BufferDisplay } from "./BufferDisplay.js";
 import { Check } from "./Check/index.js";
 import { WithDividers } from "./Divider.js";
 import { useAbortExit } from "./hooks/useAbortExit.js";
@@ -16,6 +16,7 @@ import { useFocus } from "./hooks/useFocus.js";
 import { useHotkeys } from "./hooks/useHotkeys.js";
 import { LayoutProvider } from "./LayoutContext.js";
 import { Legend } from "./Legend.js";
+import { INSET } from "./layout.js";
 import { Suite } from "./Suite/index.js";
 
 interface AppProps {
@@ -63,6 +64,7 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
   const onStoreChangeRef = useRef<(() => void) | null>(null);
 
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const [numericBuffer, setNumericBuffer] = useState<string | null>(null);
   filterRef.current = filterFor(focusedIndex);
 
   const subscribe = useMemo(
@@ -84,18 +86,16 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
     onStoreChangeRef.current?.();
   }, [focusedIndex]);
 
-  const onFocusChange = useCallback((index: number | null) => {
-    setFocusedIndex(index);
-  }, []);
-
   const hotkeys = useHotkeys({
     exit,
     interactive,
     focusedIndex,
-    isComplete,
     maxFocusableIndex,
+    isComplete,
     onAbort,
-    onFocusChange,
+    onFocusChange: setFocusedIndex,
+    numericBuffer,
+    onNumericBufferChange: setNumericBuffer,
   });
 
   useAbortExit({ abortSignal, exit, interactive, isComplete });
@@ -113,13 +113,30 @@ export function App({ store, interactive, abortSignal, onAbort }: AppProps) {
       ) : (
         <Suite projects={projects} />
       )}
-      {interactive ? (
-        <Legend
-          key={focusedIndex === null ? "legend-list" : `legend-${focusedIndex}`}
-          interactive={interactive}
-          hotkeys={hotkeys}
-        />
-      ) : null}
+
+      <Box marginY={1} paddingX={INSET}>
+        {interactive ? (
+          numericBuffer !== null ? (
+            <>
+              <Legend
+                key="legend-buffered"
+                interactive={interactive}
+                hotkeys={hotkeys}
+              />
+              <Spacer />
+              <BufferDisplay buffer={numericBuffer} />
+            </>
+          ) : (
+            <Legend
+              key={
+                focusedIndex === null ? "legend-list" : `legend-${focusedIndex}`
+              }
+              interactive={interactive}
+              hotkeys={hotkeys}
+            />
+          )
+        ) : null}
+      </Box>
     </LayoutProvider>
   );
 }

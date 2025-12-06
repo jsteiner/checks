@@ -22,6 +22,17 @@ const SAMPLE_PROJECT = {
   checks: SAMPLE_CHECKS,
 };
 
+function createMultiCheckProject(count: number) {
+  return {
+    ...SAMPLE_PROJECT,
+    checks: Array.from({ length: count }, (_, i) => ({
+      name: `check-${i + 1}`,
+      command: `echo ${i + 1}`,
+      cwd: "/tmp/project",
+    })),
+  };
+}
+
 test("shows project header with a compact summary", async () => {
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const { ink } = renderApp(App, store);
@@ -55,7 +66,7 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
   frame = stripAnsi(ink.lastFrame() ?? "");
   assert.match(frame, /alpha/);
   assert.doesNotMatch(frame, /bravo/);
-  assert.match(frame, /x or 1 to unfocus · <n> to focus · q to quit/);
+  assert.match(frame, /<n> to focus · x or 1 to unfocus · q to quit/);
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /second/);
@@ -63,6 +74,93 @@ test("shows interactive legend and focuses/unfocuses checks", async () => {
 
   ink.stdin.write("1");
   frame = await waitForFrameMatch(ink, /<n> to focus/);
+  assert.doesNotMatch(frame, /unfocus/);
+
+  ink.unmount();
+});
+
+test("enter key focuses on buffered index", async () => {
+  const store = new Suite({ projects: [createMultiCheckProject(12)] });
+  const { ink } = renderApp(App, store, { interactive: true });
+
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  // Type "1" to create buffer (matches checks 1, 10, 11, 12)
+  ink.stdin.write("1");
+  const frame = await waitForFrameMatch(ink, /Input: 1/);
+  assert.match(frame, /enter to focus/);
+
+  ink.unmount();
+});
+
+test("typing multi-digit number focuses exact check", async () => {
+  const store = new Suite({ projects: [createMultiCheckProject(25)] });
+  const { ink } = renderApp(App, store, { interactive: true });
+
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  // Type "12" to match check 12 exactly
+  ink.stdin.write("1");
+  await waitForFrameMatch(ink, /Input: 1/);
+
+  ink.stdin.write("2");
+  // Should auto-focus check 12 (index 11) since it's the only match
+  await tick();
+  const frame = stripAnsi(ink.lastFrame() ?? "");
+  assert.match(frame, /check-12/);
+  assert.match(frame, /x or 12 to unfocus/);
+  assert.doesNotMatch(frame, /Input:/);
+
+  ink.unmount();
+});
+
+test("typing single digit shows buffer with multiple matches", async () => {
+  const store = new Suite({ projects: [createMultiCheckProject(12)] });
+  const { ink } = renderApp(App, store, { interactive: true });
+
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  // Type "1" to create buffer (matches checks 1, 10, 11, 12)
+  ink.stdin.write("1");
+  const frame = await waitForFrameMatch(ink, /Input: 1/);
+
+  // Should show buffer UI with special hotkeys
+  assert.match(frame, /escape to cancel/);
+  assert.match(frame, /backspace to delete/);
+  assert.match(frame, /enter to focus/);
+
+  ink.unmount();
+});
+
+test("ignores invalid digit sequences", async () => {
+  const store = new Suite({ projects: [createMultiCheckProject(5)] });
+  const { ink } = renderApp(App, store, { interactive: true });
+
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  // Type "9" which doesn't match any check (only 1-5 exist)
+  ink.stdin.write("9");
+  await tick();
+  const frame = stripAnsi(ink.lastFrame() ?? "");
+
+  // Should stay in list view, no buffer shown
+  assert.doesNotMatch(frame, /Input:/);
+  assert.match(frame, /<n> to focus/);
+
+  ink.unmount();
+});
+
+test("x key unfocuses check", async () => {
+  const store = new Suite({ projects: [createMultiCheckProject(5)] });
+  const { ink } = renderApp(App, store, { interactive: true });
+
+  await waitForFrameMatch(ink, /<n> to focus/);
+
+  ink.stdin.write("1");
+  await waitForFrameMatch(ink, /check-1/);
+
+  ink.stdin.write("x");
+  const frame = await waitForFrameMatch(ink, /<n> to focus/);
   assert.doesNotMatch(frame, /unfocus/);
 
   ink.unmount();

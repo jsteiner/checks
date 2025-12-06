@@ -2,6 +2,11 @@
 	"$schema": "../checks.config.schema.json",
 	"project": "recursive",
 	"checks": [
-		{ "name": "echo", "command": "echo 'it works'" }
+		{ "name": "echo", "command": "echo 'it works'" },
+		{ "name": "echo", "command": "echo 'it works'" },
+		{ "name": "echo", "command": "echo 'it works'" },
+		{ "name": "echo", "command": "echo 'it works'" },
+		{ "name": "echo", "command": "echo 'it works'" },
+		{ "name": "multi-digit", "command": "echo 'Enough checks to test multi-digit input'" }
 	]
 }
