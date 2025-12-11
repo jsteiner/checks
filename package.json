@@ -16,7 +16,10 @@
     "name": "Josh Steiner"
   },
   "homepage": "https://github.com/jsteiner/checks",
-  "repository": "github:jsteiner/checks",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsteiner/checks.git"
+  },
   "type": "module",
   "bin": {
     "checks": "dist/index.js"
