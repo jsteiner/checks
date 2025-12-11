@@ -32,7 +32,7 @@ yarn add -D checks-cli
 
 ## Configuration
 
-`checks` looks for `checks.config.json` in the current working directory. When `--recursive` is set it searches subdirectories recursively, and each project's commands run from the directory where its config file lives.
+`checks` looks for `checks.config.json` in the current working directory. When `--recursive` is set, it also loads configs from directories listed in the `children` field. Each project's commands run from the directory where its config file lives.
 
 Example `checks.config.json`:
 
@@ -45,7 +45,8 @@ Example `checks.config.json`:
     { "name": "typecheck", "command": "pnpm typecheck" },
     { "name": "tests", "command": "pnpm test" },
     { "name": "lint", "command": "pnpm lint" }
-  ]
+  ],
+  "children": ["packages/api", "packages/utils"] // optional, for --recursive
 }
 ```
 
@@ -125,7 +126,7 @@ checks --recursive --only "web*/lint" # use the same pattern rules as above to m
 | `[directory]` | Base directory to run checks from. Looks for `checks.config.json` in that directory instead of the current directory. | current directory |
 | `-i, --interactive` | Keeps the TUI open and enables keyboard controls for focusing specific checks. Non-interactive mode exits as soon as the suite finishes. | off |
 | `-f, --fail-fast` | Aborts the remaining checks after the first failure. | off |
-| `-r, --recursive` | Search for every `checks.config.json` under the base directory (skipping `node_modules` and `.git`). | off |
+| `-r, --recursive` | Load configs and run checks from directories listed in the `children` field. Projects load in order: root first, then children as listed. | off |
 | `-c, --concurrency <number>` | Maximum number of checks to run concurrently. Set to `Infinity` for no artificial cap. | 75% of CPUs |
 | `-o, --only <pattern...>` | Include only checks matching one or more patterns. Patterns may be `check`, `project/check`, `project/` or `**` and support a trailing `*` for prefix matches. Example: `--only lint --only api/*`. | — |
 | `-e, --exclude <pattern...>` | Remove checks matching any pattern (same syntax as `--only`). Overrides `--only` when in conflict. | — |

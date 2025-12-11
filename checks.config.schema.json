@@ -36,6 +36,14 @@
         },
         "additionalProperties": false
       }
+    },
+    "children": {
+      "type": "array",
+      "description": "Paths to directories containing checks.config.json files. Used with --recursive. Projects are loaded in the order listed.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   },
   "additionalProperties": false

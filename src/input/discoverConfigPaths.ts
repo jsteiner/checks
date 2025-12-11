@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FileConfigError } from "./fileConfig.js";
+import { FileConfigError, loadFileConfig } from "./fileConfig.js";
 
 export async function discoverConfigPaths(
   directory: string,
@@ -8,58 +8,37 @@ export async function discoverConfigPaths(
   recursive: boolean,
 ): Promise<string[]> {
   const resolvedDir = path.resolve(directory);
-  const configPath = path.join(resolvedDir, configFileName);
+  const rootConfigPath = path.join(resolvedDir, configFileName);
 
   if (!recursive) {
-    return [configPath];
+    return [rootConfigPath];
   }
 
-  const skippedDirs = new Set(["node_modules", ".git"]);
+  const rootConfig = await loadFileConfig(rootConfigPath);
+  const children = rootConfig.children ?? [];
 
-  const matches: string[] = [];
-  await walkForConfigs(resolvedDir, {
-    fileName: configFileName,
-    skippedDirs,
-    matches,
-  });
-
-  if (matches.length === 0) {
-    throw new FileConfigError(
-      `No config files named ${configFileName} found under ${resolvedDir}`,
-    );
+  if (children.length === 0) {
+    return [rootConfigPath];
   }
 
-  return matches.sort();
-}
+  const childPaths = await Promise.all(
+    children.map(async (childPath) => {
+      const resolvedChildDir = path.isAbsolute(childPath)
+        ? childPath
+        : path.join(resolvedDir, childPath);
+      const childConfigPath = path.join(resolvedChildDir, configFileName);
 
-interface WalkOptions {
-  fileName: string;
-  skippedDirs: Set<string>;
-  matches: string[];
-}
+      try {
+        await fs.access(childConfigPath);
+      } catch {
+        throw new FileConfigError(
+          `Child config not found: ${childConfigPath} (from children entry "${childPath}")`,
+        );
+      }
 
-async function walkForConfigs(
-  dir: string,
-  options: WalkOptions,
-): Promise<void> {
-  let entries: import("node:fs").Dirent[];
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch {
-    throw new FileConfigError(`Failed to read directory ${dir}`);
-  }
+      return childConfigPath;
+    }),
+  );
 
-  for (const entry of entries) {
-    if (entry.isSymbolicLink()) continue;
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (options.skippedDirs.has(entry.name)) continue;
-      await walkForConfigs(fullPath, options);
-      continue;
-    }
-
-    if (entry.isFile() && entry.name === options.fileName) {
-      options.matches.push(fullPath);
-    }
-  }
+  return [rootConfigPath, ...childPaths];
 }

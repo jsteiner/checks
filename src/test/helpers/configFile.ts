@@ -47,6 +47,7 @@ export async function writeConfigFiles(
   rootConfig: Record<string, unknown> = {
     project: "root",
     checks: [{ name: "alpha", command: "echo alpha" }],
+    children: ["nested"],
   },
   nestedConfig: Record<string, unknown> = {
     project: "nested",
@@ -60,34 +61,4 @@ export async function writeConfigFiles(
     JSON.stringify(nestedConfig),
     "utf8",
   );
-}
-
-export async function setupSymlinkAndIgnoredDirs(
-  setup: NestedConfigSetup,
-): Promise<void> {
-  const nodeModulesDir = path.join(setup.baseDir, "node_modules");
-  await fs.mkdir(nodeModulesDir);
-
-  // Write only the nested config file, not the root
-  await fs.writeFile(
-    setup.nestedConfigPath,
-    JSON.stringify({
-      project: "nested",
-      checks: [{ name: "alpha", command: "echo alpha" }],
-    }),
-    "utf8",
-  );
-
-  const ignoredPath = path.join(nodeModulesDir, "checks.config.json");
-  await fs.writeFile(
-    ignoredPath,
-    JSON.stringify({
-      project: "ignored",
-      checks: [{ name: "beta", command: "echo beta" }],
-    }),
-    "utf8",
-  );
-
-  const symlinkPath = path.join(setup.baseDir, "checks.config.json");
-  await fs.symlink(setup.nestedConfigPath, symlinkPath);
 }

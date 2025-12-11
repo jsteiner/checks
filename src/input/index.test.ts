@@ -4,7 +4,6 @@ import { test } from "vitest";
 import {
   createConfigFile,
   createNestedConfigDirs,
-  setupSymlinkAndIgnoredDirs,
   writeConfigFiles,
 } from "../test/helpers/configFile.js";
 import { createConfigData } from "../test/helpers/factories.js";
@@ -60,7 +59,7 @@ test("builds config and CLI options", async () => {
   ]);
 });
 
-test("recursively discovers configs when requested", async () => {
+test("recursively discovers configs from children field", async () => {
   const { input, setup, names, paths } = await buildRecursiveInput();
 
   const workingDirs = input.projects.map((config) => config.checks[0]?.cwd);
@@ -70,38 +69,12 @@ test("recursively discovers configs when requested", async () => {
   assert.deepEqual(workingDirs, [setup.baseDir, setup.nestedDir]);
 });
 
-test("throws when recursive search finds no configs", async () => {
+test("throws when root config not found in recursive mode", async () => {
   const setup = await createNestedConfigDirs();
 
   await assert.rejects(
-    () =>
-      buildInput(["node", "checks", setup.baseDir, "--recursive"]).catch(
-        (error) => {
-          assert.match(
-            error instanceof Error ? error.message : "",
-            /No config files named/,
-          );
-          throw error;
-        },
-      ),
-    /No config files named/,
-  );
-});
-
-test("skips symlinks and ignored directories when searching recursively", async () => {
-  const setup = await createNestedConfigDirs();
-  await setupSymlinkAndIgnoredDirs(setup);
-
-  const input = await buildInput([
-    "node",
-    "checks",
-    setup.baseDir,
-    "--recursive",
-  ]);
-
-  assert.deepEqual(
-    input.projects.map((config) => config.path),
-    [setup.nestedConfigPath],
+    () => buildInput(["node", "checks", setup.baseDir, "--recursive"]),
+    /Config file not found/,
   );
 });
 

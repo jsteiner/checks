@@ -10,6 +10,7 @@ const fileConfigSchema = z.object({
   project: z.string().trim().min(1, "project is required"),
   color: z.string().trim().optional(),
   checks: z.array(checkSchema, { message: "checks must be an array" }),
+  children: z.array(z.string().trim().min(1)).optional(),
 });
 
 export class FileConfigError extends Error {

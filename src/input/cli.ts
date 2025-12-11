@@ -40,7 +40,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     )
     .option(
       "-r, --recursive",
-      "recursively search for and run checks in child directories",
+      "include checks from directories listed in the 'children' field",
       false,
     )
     .option(

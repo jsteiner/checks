@@ -62,13 +62,13 @@ Handles configuration loading and CLI argument parsing:
 
 - `cli.ts`: CLI argument parsing using Commander
 - `fileConfig.ts`: JSON config file loading/validation using Zod
-- `discoverConfigPaths.ts`: Recursive config file discovery for monorepos
+- `discoverConfigPaths.ts`: Config path discovery, including children resolution for monorepos
 - `checkFilters.ts`: Pattern-based filtering (`--only`/`--exclude`)
 - `projectColors.ts`: Terminal color assignment
 
 **Features:**
 - Single project mode and recursive (monorepo) mode
-- Auto-discovery of `checks.config.json` files
+- Explicit `children` field for monorepo child project discovery
 - Pattern-based filtering with glob support (e.g., `web/**`, `lint*`)
 - Default concurrency: 75% of available CPUs
 
@@ -79,9 +79,12 @@ Handles configuration loading and CLI argument parsing:
   "color": "cyan",
   "checks": [
     { "name": "test", "command": "pnpm test" }
-  ]
+  ],
+  "children": ["packages/web", "packages/api"]
 }
 ```
+
+The `children` field is optional and used with `--recursive` mode. It specifies paths (relative or absolute) to directories containing their own `checks.config.json` files. Projects are loaded in order: root first, then children in the order listed.
 
 ### 3. State Layer
 
