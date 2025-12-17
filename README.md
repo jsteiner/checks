@@ -99,6 +99,7 @@ Filter with `--only`:
 
 ```bash
 checks --only lint # include only the "lint" check
+checks --only lint --only test # include only the "lint" and "test" checks
 checks --only "lint*" # include "lint" and "lint:foo", but not "lint:foo:bar"
 checks --only "lint:*" # include "lint:foo", but not "lint" or "lint:foo:bar"
 checks --only "lint**" # include "lint", "lint:foo", "lint:foo:bar"
