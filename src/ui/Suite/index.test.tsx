@@ -22,7 +22,7 @@ function renderSuite(projects: ProjectState[]): string {
   return stripAnsi(lastFrame() ?? "");
 }
 
-test("shows a project summary in the header", () => {
+test("shows check header with project name and duration", () => {
   const check = createCheck({
     result: { status: "passed", finishedAt: 100, exitCode: 0 },
   });
@@ -40,12 +40,10 @@ test("shows a project summary in the header", () => {
 
   assert.match(frame, /demo/);
   assert.match(frame, /0\.10s/);
-  assert.match(frame, /all passed/);
-  assert.ok(!/failed/.test(frame));
-  assert.ok(!/aborted/.test(frame));
+  assert.match(frame, /passed/);
 });
 
-test("shows a status breakdown when any check fails", () => {
+test("shows output section when check fails", () => {
   const projects: ProjectState[] = [
     createProject({
       project: "demo",
@@ -70,11 +68,8 @@ test("shows a status breakdown when any check fails", () => {
   const frame = renderSuite(projects);
 
   assert.match(frame, /demo/);
-  assert.match(frame, /0\.10s/);
-  assert.match(frame, /1 passed/);
-  assert.match(frame, /1 failed/);
-  assert.match(frame, /0 aborted/);
-  assert.ok(!/all passed/.test(frame));
+  assert.match(frame, /passed/);
+  assert.match(frame, /failed/);
 });
 
 test("renders multiple projects with sequential check indexes", () => {

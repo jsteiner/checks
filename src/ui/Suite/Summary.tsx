@@ -1,21 +1,26 @@
-import { Box, Text } from "ink";
-import type { ProjectState } from "../../types.js";
-import { INSET } from "../layout.js";
-import { ProjectSummary } from "./ProjectSummary.js";
+import { Box } from "ink";
+import type { CheckState, ProjectState } from "../../types.js";
+import { CheckHeader } from "../Check/CheckHeader.js";
 
-interface SummaryProps {
-  projects: ProjectState[];
+interface CheckWithProject {
+  check: CheckState;
+  project: ProjectState;
 }
 
-export function Summary({ projects }: SummaryProps) {
+interface SummaryProps {
+  checks: CheckWithProject[];
+}
+
+export function Summary({ checks }: SummaryProps) {
   return (
-    <Box flexDirection="column" gap={1} paddingX={INSET}>
-      <Text color={"white"}>summary</Text>
-      <Box flexDirection="column">
-        {projects.map((project) => {
-          return <ProjectSummary project={project} key={project.path} />;
-        })}
-      </Box>
+    <Box flexDirection="column">
+      {checks.map(({ check, project }) => (
+        <CheckHeader
+          key={`${project.path}-${check.index}`}
+          project={project}
+          check={check}
+        />
+      ))}
     </Box>
   );
 }

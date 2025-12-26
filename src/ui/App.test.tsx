@@ -33,14 +33,14 @@ function createMultiCheckProject(count: number) {
   };
 }
 
-test("shows project header with a compact summary", async () => {
+test("shows check headers with status", async () => {
   const store = new Suite({ projects: [SAMPLE_PROJECT] });
   const { ink } = renderApp(App, store);
 
   store.getCheck(0, 0).markPassed(0);
   store.getCheck(0, 1).markPassed(0);
 
-  const frame = stripAnsi(await waitForFrameMatch(ink, /all passed/));
+  const frame = stripAnsi(await waitForFrameMatch(ink, /passed/));
   assert.match(frame, /sample/);
   assert.match(frame, /first/);
   assert.doesNotMatch(frame, /failed/);
