@@ -15,6 +15,7 @@ export interface CLIOptions {
   filters: CheckFilterRule[];
   directory: string;
   configFileName: string;
+  noAnsi: boolean;
 }
 
 function getDefaultConcurrency(): number {
@@ -57,6 +58,10 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
       "-c, --concurrency <number>",
       "maximum number of checks to run concurrently (default: 75% of CPUs)",
       String(getDefaultConcurrency()),
+    )
+    .option(
+      "--no-ansi",
+      "disable live rendering; output plain text once complete",
     );
 
   program.parse(argv);
@@ -65,6 +70,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     only,
     exclude,
     concurrency: concurrencyStr,
+    ansi,
     ...base
   } = program.opts<{
     interactive: boolean;
@@ -73,6 +79,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     concurrency: string;
     only: string[];
     exclude: string[];
+    ansi: boolean;
   }>();
 
   const concurrency = parseConcurrency(concurrencyStr);
@@ -84,6 +91,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     filters: toFilterRules(only, exclude),
     directory,
     configFileName: "checks.config.json",
+    noAnsi: !ansi,
   };
 }
 

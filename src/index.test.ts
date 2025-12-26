@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import { EXIT_CODES, runChecks } from "./index.js";
 import type { Suite } from "./state/Suite.js";
 import { createRenderWithAbort } from "./test/helpers/app.jsx";
@@ -227,4 +227,98 @@ test("handles executor run exception", async () => {
 
   assert.equal(exitCode, EXIT_CODES.orchestratorError);
   assert.match(errors[0] ?? "", /executor failed/);
+});
+
+test("--no-ansi outputs plain text without ANSI codes", async () => {
+  const configPath = await createConfigFile(createConfigData());
+  const configDir = path.dirname(configPath);
+
+  const chunks: string[] = [];
+  const writeSpy = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation((chunk: string | Uint8Array) => {
+      chunks.push(chunk.toString());
+      return true;
+    });
+
+  try {
+    const exitCode = await runChecks(
+      ["node", "checks", configDir, "--no-ansi"],
+      {
+        createExecutor: (_input, store) => ({
+          run: async () => {
+            store.getCheck(0, 0).markPassed(0);
+          },
+        }),
+      },
+    );
+
+    assert.equal(exitCode, EXIT_CODES.success);
+    assert.ok(chunks.length > 0, "should have written output");
+
+    const output = chunks.join("");
+    // Verify no ANSI escape codes (ESC [ or \x1b[)
+    assert.ok(
+      !output.includes("\x1b["),
+      `output should not contain ANSI codes: ${JSON.stringify(output)}`,
+    );
+    assert.ok(output.includes("passed"), "output should contain check status");
+  } finally {
+    writeSpy.mockRestore();
+  }
+});
+
+test("--no-ansi exits with correct code on failure", async () => {
+  const configPath = await createConfigFile(createConfigData());
+  const configDir = path.dirname(configPath);
+
+  const writeSpy = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
+
+  try {
+    const exitCode = await runChecks(
+      ["node", "checks", configDir, "--no-ansi"],
+      {
+        createExecutor: (_input, store) => ({
+          run: async () => {
+            store.getCheck(0, 0).markFailed(1, "test failure");
+          },
+        }),
+      },
+    );
+
+    assert.equal(exitCode, EXIT_CODES.checksFailed);
+  } finally {
+    writeSpy.mockRestore();
+  }
+});
+
+test("--no-ansi handles runtime errors", async () => {
+  const configPath = await createConfigFile(createConfigData());
+  const configDir = path.dirname(configPath);
+  const errors: string[] = [];
+
+  const writeSpy = vi
+    .spyOn(process.stdout, "write")
+    .mockImplementation(() => true);
+
+  try {
+    const exitCode = await runChecks(
+      ["node", "checks", configDir, "--no-ansi"],
+      {
+        createExecutor: () => ({
+          run: async () => {
+            throw new Error("runtime error in no-ansi mode");
+          },
+        }),
+        logError: (message) => errors.push(message),
+      },
+    );
+
+    assert.equal(exitCode, EXIT_CODES.orchestratorError);
+    assert.match(errors[0] ?? "", /runtime error in no-ansi mode/);
+  } finally {
+    writeSpy.mockRestore();
+  }
 });

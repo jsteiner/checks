@@ -26,6 +26,7 @@ test("parses filters in argv order and trims patterns", () => {
     concurrency: DEFAULT_CONCURRENCY,
     directory: ".",
     configFileName: "checks.config.json",
+    noAnsi: false,
     filters: [
       { type: "only", pattern: "lint" },
       { type: "only", pattern: "web/typecheck" },
@@ -140,4 +141,20 @@ test("parses directory with flags", () => {
   assert.equal(options.directory, "/some/directory");
   assert.equal(options.recursive, true);
   assert.deepEqual(options.filters, [{ type: "only", pattern: "lint" }]);
+});
+
+test("noAnsi defaults to false", () => {
+  const options = parseCLIOptions(["/usr/bin/node", "/tmp/checks"]);
+
+  assert.equal(options.noAnsi, false);
+});
+
+test("parses --no-ansi flag", () => {
+  const options = parseCLIOptions([
+    "/usr/bin/node",
+    "/tmp/checks",
+    "--no-ansi",
+  ]);
+
+  assert.equal(options.noAnsi, true);
 });
