@@ -1,4 +1,5 @@
 import { availableParallelism } from "node:os";
+import process from "node:process";
 import { Command } from "commander";
 import packageJson from "../../package.json" with { type: "json" };
 
@@ -15,6 +16,7 @@ export interface CLIOptions {
   filters: CheckFilterRule[];
   directory: string;
   configFileName: string;
+  ansi: boolean;
 }
 
 function getDefaultConcurrency(): number {
@@ -57,6 +59,11 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
       "-c, --concurrency <number>",
       "maximum number of checks to run concurrently (default: 75% of CPUs)",
       String(getDefaultConcurrency()),
+    )
+    .option(
+      "--no-ansi",
+      "disable live rendering; output plain text once complete",
+      process.stdout.isTTY ?? false,
     );
 
   program.parse(argv);
@@ -65,6 +72,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     only,
     exclude,
     concurrency: concurrencyStr,
+    ansi,
     ...base
   } = program.opts<{
     interactive: boolean;
@@ -73,6 +81,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     concurrency: string;
     only: string[];
     exclude: string[];
+    ansi: boolean;
   }>();
 
   const concurrency = parseConcurrency(concurrencyStr);
@@ -84,6 +93,7 @@ export function parseCLIOptions(argv: string[]): CLIOptions {
     filters: toFilterRules(only, exclude),
     directory,
     configFileName: "checks.config.json",
+    ansi,
   };
 }
 

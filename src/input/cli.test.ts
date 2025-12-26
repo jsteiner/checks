@@ -26,6 +26,7 @@ test("parses filters in argv order and trims patterns", () => {
     concurrency: DEFAULT_CONCURRENCY,
     directory: ".",
     configFileName: "checks.config.json",
+    ansi: false, // defaults to false when stdout is not a TTY (e.g., in tests)
     filters: [
       { type: "only", pattern: "lint" },
       { type: "only", pattern: "web/typecheck" },
@@ -140,4 +141,21 @@ test("parses directory with flags", () => {
   assert.equal(options.directory, "/some/directory");
   assert.equal(options.recursive, true);
   assert.deepEqual(options.filters, [{ type: "only", pattern: "lint" }]);
+});
+
+test("ansi defaults to false when stdout is not a TTY", () => {
+  const options = parseCLIOptions(["/usr/bin/node", "/tmp/checks"]);
+
+  // In test environment, stdout is not a TTY, so ansi defaults to false
+  assert.equal(options.ansi, false);
+});
+
+test("parses --no-ansi flag", () => {
+  const options = parseCLIOptions([
+    "/usr/bin/node",
+    "/tmp/checks",
+    "--no-ansi",
+  ]);
+
+  assert.equal(options.ansi, false);
 });

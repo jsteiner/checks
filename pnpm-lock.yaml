@@ -32,6 +32,9 @@ importers:
       react:
         specifier: ^19.2.0
         version: 19.2.0
+      strip-ansi:
+        specifier: ^7.1.2
+        version: 7.1.2
       zod:
         specifier: ^4.1.12
         version: 4.1.12

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
+import { EventEmitter } from "node:events";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { render } from "ink";
 import React from "react";
+import stripAnsi from "strip-ansi";
 import { Executor } from "./executor/index.js";
 import { getTerminalDimensions } from "./executor/terminalConfig.js";
 import { FileConfigError } from "./input/fileConfig.js";
@@ -13,6 +15,22 @@ import { buildInput, type Input } from "./input/index.js";
 import { Suite } from "./state/Suite.js";
 import type { TerminalDimensions } from "./types.js";
 import { App } from "./ui/App.js";
+
+class BufferedOutputStream extends EventEmitter {
+  columns: number;
+  private lastFrame: string | undefined;
+
+  constructor(columns: number) {
+    super();
+    this.columns = columns;
+  }
+
+  write = (frame: string) => {
+    this.lastFrame = frame;
+  };
+
+  getLastFrame = () => this.lastFrame;
+}
 
 export const EXIT_CODES = {
   success: 0,
@@ -74,28 +92,59 @@ export async function runChecks(
     abortController.signal,
     terminalDimensions,
   );
-  const ink = renderApp(
+
+  const ansi = input.options.ansi;
+
+  const appElement = (
     <App
       store={store}
-      interactive={input.options.interactive}
+      interactive={ansi ? input.options.interactive : false}
       abortSignal={abortController.signal}
       onAbort={() => {
         if (!abortController.signal.aborted) {
           abortController.abort();
         }
       }}
-    />,
+    />
   );
 
-  try {
-    const exitPromise = ink.waitUntilExit();
-    await Promise.all([executor.run(), store.waitForCompletion()]);
-    await exitPromise;
-  } catch (error) {
-    logError(
-      error instanceof Error ? error.message : "Unexpected runtime error",
-    );
-    return EXIT_CODES.orchestratorError;
+  if (!ansi) {
+    const bufferedOutput = new BufferedOutputStream(terminalDimensions.columns);
+    const ink = renderApp(appElement, {
+      stdout: bufferedOutput as unknown as NodeJS.WriteStream,
+      patchConsole: false,
+    });
+
+    try {
+      await Promise.all([executor.run(), store.waitForCompletion()]);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      const lastFrame = bufferedOutput.getLastFrame() ?? "";
+      const plainOutput = stripAnsi(lastFrame);
+      process.stdout.write(plainOutput);
+
+      ink.unmount();
+    } catch (error) {
+      ink.unmount();
+      logError(
+        error instanceof Error ? error.message : "Unexpected runtime error",
+      );
+      return EXIT_CODES.orchestratorError;
+    }
+  } else {
+    const ink = renderApp(appElement);
+
+    try {
+      const exitPromise = ink.waitUntilExit();
+      await Promise.all([executor.run(), store.waitForCompletion()]);
+      await exitPromise;
+    } catch (error) {
+      logError(
+        error instanceof Error ? error.message : "Unexpected runtime error",
+      );
+      return EXIT_CODES.orchestratorError;
+    }
   }
 
   const { summary } = store.toState();

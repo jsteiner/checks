@@ -31,6 +31,7 @@ async function executeChecks(
       filters: [],
       directory: ".",
       configFileName: "checks.config.json",
+      ansi: true,
       ...options,
     },
   };
