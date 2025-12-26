@@ -15,6 +15,7 @@ type ExecutorFactory = (
 
 const renderStub = () => ({
   waitUntilExit: async () => {},
+  unmount: () => {},
 });
 
 async function runTestConfig(

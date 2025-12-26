@@ -35,6 +35,7 @@ export function createRenderWithAbort() {
     props.onAbort();
     return {
       waitUntilExit: async () => {},
+      unmount: () => {},
     } as never;
   };
 }

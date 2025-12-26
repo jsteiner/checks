@@ -93,7 +93,7 @@ export async function runChecks(
     terminalDimensions,
   );
 
-  const { noAnsi } = input.options;
+  const noAnsi = input.options.noAnsi || !process.stdout.isTTY;
 
   const appElement = (
     <App
