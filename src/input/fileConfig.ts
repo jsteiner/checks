@@ -1,9 +1,28 @@
 import fs from "node:fs/promises";
 import { z } from "zod";
 
+const TIMEOUT_SIGNALS = [
+  "SIGTERM",
+  "SIGINT",
+  "SIGQUIT",
+  "SIGHUP",
+  "SIGKILL",
+] as const;
+const signalSchema = z.enum(TIMEOUT_SIGNALS);
+
+const timeoutSchema = z
+  .object({
+    ms: z.number().int().min(1),
+    signal: signalSchema.optional(),
+    killAfterMs: z.number().int().min(0).optional(),
+    onTimeout: z.enum(["failed", "aborted"]).optional(),
+  })
+  .strict();
+
 const checkSchema = z.object({
   name: z.string().trim().min(1, "name is required"),
   command: z.string().trim().min(1, "command is required"),
+  timeout: timeoutSchema.optional(),
 });
 
 const fileConfigSchema = z.object({
@@ -64,6 +83,9 @@ function formatIssue(issue: z.ZodIssue) {
     }
     if (issue.message === "Required") {
       return `${issue.path.join(".")} is required`;
+    }
+    if (issue.code === "invalid_value") {
+      return `${issue.path.join(".")}: ${issue.message}`;
     }
   }
   return issue.message;

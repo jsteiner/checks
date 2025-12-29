@@ -71,6 +71,7 @@ Handles configuration loading and CLI argument parsing:
 - Explicit `children` field for monorepo child project discovery
 - Pattern-based filtering with glob support (e.g., `web/**`, `lint*`)
 - Default concurrency: 75% of available CPUs
+- Optional per-check timeouts via `timeout` configuration
 
 **Config File Format:**
 ```json
@@ -78,7 +79,16 @@ Handles configuration loading and CLI argument parsing:
   "project": "project-name",
   "color": "cyan",
   "checks": [
-    { "name": "test", "command": "pnpm test" }
+    {
+      "name": "test",
+      "command": "pnpm test",
+      "timeout": {
+        "ms": 300000,
+        "signal": "SIGTERM",
+        "killAfterMs": 5000,
+        "onTimeout": "failed"
+      }
+    }
   ],
   "children": ["packages/web", "packages/api"]
 }
@@ -194,6 +204,7 @@ Manages parallel execution of checks:
 - **Terminal buffer:** Uses `@xterm/headless` to process ANSI codes
 - **Output deduplication:** Only updates when output changes
 - **Abort handling:** Propagates abort signals to child processes
+- **Timeout enforcement:** Per-check timeouts with configurable signals and optional SIGKILL escalation
 - **Fail-fast mode:** Aborts remaining checks after first failure
 - **Dynamic resize:** Handles terminal resize events
 

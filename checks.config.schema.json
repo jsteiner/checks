@@ -32,6 +32,34 @@
             "type": "string",
             "description": "The shell command to execute for this check",
             "minLength": 1
+          },
+          "timeout": {
+            "type": "object",
+            "description": "Timeout configuration for this check.",
+            "required": ["ms"],
+            "properties": {
+              "ms": {
+                "type": "integer",
+                "description": "Timeout duration in milliseconds.",
+                "minimum": 1
+              },
+              "signal": {
+                "type": "string",
+                "description": "Signal to send when the timeout is reached (default: SIGTERM).",
+                "enum": ["SIGTERM", "SIGINT", "SIGQUIT", "SIGHUP", "SIGKILL"]
+              },
+              "killAfterMs": {
+                "type": "integer",
+                "description": "Send SIGKILL if the process has not exited after this many milliseconds.",
+                "minimum": 0
+              },
+              "onTimeout": {
+                "type": "string",
+                "description": "Result status to record when the timeout is reached.",
+                "enum": ["failed", "aborted"]
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false

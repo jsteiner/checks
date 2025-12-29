@@ -26,13 +26,17 @@ export async function buildInput(
       const config = await loadFileConfig(configFilePath);
       const cwd = path.dirname(configFilePath);
       return {
-        ...config,
+        project: config.project,
         color: config.color ?? getProjectColor(index),
         path: configFilePath,
-        checks: config.checks.map((check) => ({
-          ...check,
-          cwd,
-        })),
+        checks: config.checks.map((check) => {
+          return {
+            name: check.name,
+            command: check.command,
+            cwd,
+            ...(check.timeout ? { timeout: check.timeout } : {}),
+          };
+        }),
       };
     }),
   );

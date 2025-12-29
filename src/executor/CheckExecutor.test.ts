@@ -228,6 +228,92 @@ test("marks aborted when the child closes with a signal", async () => {
   assert.equal(first.result.status, "aborted");
 });
 
+test("fails a check when the timeout is reached", async () => {
+  const signals: NodeJS.Signals[] = [];
+  const spawn = () => {
+    const child = createFakeSpawnedProcess();
+    child.kill = (signal) => {
+      if (signal) {
+        signals.push(signal);
+      }
+      child.emitClose(null, signal ?? null);
+      return true;
+    };
+    return child;
+  };
+
+  const { store, status } = await executeCheck(
+    {
+      name: "timeout",
+      command: "noop",
+      cwd: "/tmp/project",
+      timeout: { ms: 5 },
+    },
+    spawn,
+  );
+  const first = store.getCheck(0);
+
+  assert.equal(status, "failed");
+  const result = expectFailed(first.result);
+  assert.equal(result.errorMessage, "Timed out after 5ms");
+  assert.deepEqual(signals, ["SIGTERM"]);
+});
+
+test("marks aborted when timeout onTimeout is aborted", async () => {
+  const spawn = () => {
+    const child = createFakeSpawnedProcess();
+    child.kill = (signal) => {
+      child.emitClose(null, signal ?? null);
+      return true;
+    };
+    return child;
+  };
+
+  const { store, status } = await executeCheck(
+    {
+      name: "timeout-abort",
+      command: "noop",
+      cwd: "/tmp/project",
+      timeout: { ms: 5, onTimeout: "aborted" },
+    },
+    spawn,
+  );
+  const first = store.getCheck(0);
+
+  assert.equal(status, "aborted");
+  assert.equal(first.result.status, "aborted");
+});
+
+test("sends SIGKILL after killAfterMs when the process does not exit", async () => {
+  const signals: NodeJS.Signals[] = [];
+  const spawn = () => {
+    const child = createFakeSpawnedProcess();
+    child.kill = (signal) => {
+      if (signal) {
+        signals.push(signal);
+      }
+      if (signal === "SIGKILL") {
+        child.emitClose(null, signal);
+      }
+      return true;
+    };
+    return child;
+  };
+
+  const { status } = await executeCheck(
+    {
+      name: "timeout-kill",
+      command: "noop",
+      cwd: "/tmp/project",
+      timeout: { ms: 5, killAfterMs: 5, signal: "SIGTERM" },
+    },
+    spawn,
+  );
+
+  assert.equal(status, "failed");
+  assert.deepEqual(signals, ["SIGTERM", "SIGKILL"]);
+});
+
 test("skips killing when the child is already marked killed", async () => {
   const controller = new AbortController();
   let killCalled = false;

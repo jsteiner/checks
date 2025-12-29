@@ -1,7 +1,18 @@
 import type { Check } from "../state/Check.js";
-import type { CheckStatus, TerminalDimensions } from "../types.js";
+import type {
+  CheckStatus,
+  TerminalDimensions,
+  TimeoutAction,
+} from "../types.js";
 import { OutputManager } from "./OutputManager.js";
 import type { SpawnedProcess, SpawnFunction } from "./PtyProcess.js";
+
+const DEFAULT_TIMEOUT_SIGNAL: NodeJS.Signals = "SIGTERM";
+const DEFAULT_TIMEOUT_ACTION: TimeoutAction = "failed";
+
+function formatTimeoutMessage(timeoutMs: number) {
+  return `Timed out after ${timeoutMs}ms`;
+}
 
 export class CheckExecutor {
   private aborted = false;
@@ -22,6 +33,10 @@ export class CheckExecutor {
     const outputManager = new OutputManager(this.terminalDimensions);
 
     return new Promise((resolve) => {
+      let resolved = false;
+      let timeoutId: NodeJS.Timeout | undefined;
+      let killTimeoutId: NodeJS.Timeout | undefined;
+
       const onAbort = () => {
         this.aborted = true;
         this.attemptKill("SIGTERM");
@@ -30,8 +45,20 @@ export class CheckExecutor {
 
       this.signal.addEventListener("abort", onAbort);
 
+      const clearTimeouts = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (killTimeoutId) clearTimeout(killTimeoutId);
+      };
+
+      const resolveOnce = (status: CheckStatus) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(status);
+      };
+
       const cleanup = () => {
         this.signal.removeEventListener("abort", onAbort);
+        clearTimeouts();
         outputManager.dispose();
       };
 
@@ -42,14 +69,49 @@ export class CheckExecutor {
         }
       };
 
+      const finalizeIfTerminal = () => {
+        if (check.status === "pending" || check.status === "running") {
+          return false;
+        }
+        cleanup();
+        resolveOnce(check.status);
+        return true;
+      };
+
+      const handleTimeout = async () => {
+        const timeout = check.timeout;
+        if (!timeout || check.status !== "running") return;
+        const message = formatTimeoutMessage(timeout.ms);
+        const newOutput = await outputManager.appendChunk(`\n${message}\n`);
+        if (newOutput) {
+          check.setOutput(newOutput);
+        }
+        if ((timeout.onTimeout ?? DEFAULT_TIMEOUT_ACTION) === "aborted") {
+          check.markAborted();
+        } else {
+          check.markFailed(null, message);
+        }
+        this.attemptKill(timeout.signal ?? DEFAULT_TIMEOUT_SIGNAL);
+        if (timeout.killAfterMs !== undefined) {
+          killTimeoutId = setTimeout(() => {
+            this.attemptKill("SIGKILL");
+          }, timeout.killAfterMs);
+        }
+      };
+
       try {
         this.child = this.spawnFn(check.command, check.cwd, onResize);
         check.markRunning();
+        if (check.timeout) {
+          timeoutId = setTimeout(() => {
+            void handleTimeout();
+          }, check.timeout.ms);
+        }
       } catch (error) {
         cleanup();
         const message = error instanceof Error ? error.message : "Spawn failed";
         check.markFailed(null, message);
-        resolve("failed");
+        resolveOnce("failed");
         return;
       }
 
@@ -61,16 +123,18 @@ export class CheckExecutor {
       });
 
       this.child.on("error", async (error) => {
+        if (finalizeIfTerminal()) return;
         const newOutput = await outputManager.appendChunk(`${error.message}\n`);
         if (newOutput) {
           check.setOutput(newOutput);
         }
         check.markFailed(null, error.message);
         cleanup();
-        resolve("failed");
+        resolveOnce("failed");
       });
 
       this.child.on("close", (code, signalCode) => {
+        if (finalizeIfTerminal()) return;
         let status: CheckStatus = "running";
         if (this.aborted || this.signal.aborted || signalCode) {
           check.markAborted();
@@ -83,7 +147,7 @@ export class CheckExecutor {
           status = "failed";
         }
         cleanup();
-        resolve(status);
+        resolveOnce(status);
       });
     });
   }

@@ -43,12 +43,32 @@ Example `checks.config.json`:
   "color": "cyan", // optional
   "checks": [
     { "name": "typecheck", "command": "pnpm typecheck" },
-    { "name": "tests", "command": "pnpm test" },
+    {
+      "name": "tests",
+      "command": "pnpm test",
+      "timeout": {
+        "ms": 60000,
+        "signal": "SIGTERM",
+        "killAfterMs": 5000,
+        "onTimeout": "failed"
+      }
+    },
     { "name": "lint", "command": "pnpm lint" }
   ],
   "children": ["packages/api", "packages/utils"] // optional, for --recursive
 }
 ```
+
+### `timeout` config
+
+`timeout` is optional per check. When set, the following fields are supported:
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ms` | number | — | Timeout duration in milliseconds (required). |
+| `signal` | `"SIGTERM" \| "SIGINT" \| "SIGQUIT" \| "SIGHUP" \| "SIGKILL"` | `"SIGTERM"` | Signal to send when the timeout is reached. |
+| `killAfterMs` | number | — | If set, send `SIGKILL` after this many milliseconds if the process has not exited. |
+| `onTimeout` | `"failed" \| "aborted"` | `"failed"` | Result status to record when the timeout is reached. |
 
 ## Usage
 

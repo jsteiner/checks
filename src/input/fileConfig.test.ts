@@ -101,6 +101,32 @@ test("parses a valid config", async () => {
   assert.deepEqual(config.checks[0], { name: "lint", command: "pnpm lint" });
 });
 
+test("parses check timeout configuration", async () => {
+  const filePath = await createConfigFile({
+    project: "demo",
+    checks: [
+      {
+        name: "lint",
+        command: "pnpm lint",
+        timeout: {
+          ms: 120000,
+          signal: "SIGINT",
+          killAfterMs: 5000,
+          onTimeout: "aborted",
+        },
+      },
+    ],
+  });
+
+  const config = await loadFileConfig(filePath);
+  assert.deepEqual(config.checks[0]?.timeout, {
+    ms: 120000,
+    signal: "SIGINT",
+    killAfterMs: 5000,
+    onTimeout: "aborted",
+  });
+});
+
 test("parses an optional project color", async () => {
   const filePath = await createConfigFile(
     createConfigData({ color: "magenta" }),
@@ -184,6 +210,66 @@ test("formats error message 'Required' in issue path", async () => {
     (error) => {
       assert.ok(error instanceof FileConfigError);
       assert.match(error.message, /name is required/);
+      return true;
+    },
+  );
+});
+
+test("requires timeout ms when timeout is provided", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: [{ name: "test", command: "echo test", timeout: {} }],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /timeout\.ms is required/);
+      return true;
+    },
+  );
+});
+
+test("validates timeout fields", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: [
+      {
+        name: "test",
+        command: "echo test",
+        timeout: { ms: 1000, onTimeout: "nope" },
+      },
+    ],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /Invalid option/);
+      return true;
+    },
+  );
+});
+
+test("validates timeout signal options", async () => {
+  const filePath = await createConfigFile({
+    project: "test",
+    checks: [
+      {
+        name: "test",
+        command: "echo test",
+        timeout: { ms: 1000, signal: "SIGUSR1" },
+      },
+    ],
+  });
+
+  await assert.rejects(
+    async () => loadFileConfig(filePath),
+    (error) => {
+      assert.ok(error instanceof FileConfigError);
+      assert.match(error.message, /timeout\.signal/);
       return true;
     },
   );

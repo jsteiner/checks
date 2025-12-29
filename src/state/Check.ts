@@ -12,6 +12,7 @@ export class Check {
   readonly name: string;
   readonly command: string;
   readonly cwd: string;
+  readonly timeout?: CheckDefinition["timeout"];
   readonly index: number;
   startedAt: number | null = null;
 
@@ -27,6 +28,7 @@ export class Check {
     this.name = definition.name;
     this.command = definition.command;
     this.cwd = definition.cwd;
+    this.timeout = definition.timeout;
     this.index = index;
     this.onUpdate = onUpdate;
   }
@@ -115,6 +117,7 @@ export class Check {
       name: this.name,
       command: this.command,
       cwd: this.cwd,
+      ...(this.timeout ? { timeout: this.timeout } : {}),
       index: this.index,
       startedAt: this.startedAt,
       output: this.output,

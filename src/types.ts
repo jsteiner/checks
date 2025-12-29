@@ -5,10 +5,22 @@ export interface TerminalDimensions {
   rows: number;
 }
 
+export type TimeoutAction = "failed" | "aborted";
+
+type TimeoutSignal = "SIGTERM" | "SIGINT" | "SIGQUIT" | "SIGHUP" | "SIGKILL";
+
+interface CheckTimeoutConfig {
+  ms: number;
+  signal?: TimeoutSignal | undefined;
+  killAfterMs?: number | undefined;
+  onTimeout?: TimeoutAction | undefined;
+}
+
 export interface CheckDefinition {
   name: string;
   command: string;
   cwd: string;
+  timeout?: CheckTimeoutConfig;
 }
 
 export interface ProjectDefinition {

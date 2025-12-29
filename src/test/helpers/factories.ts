@@ -52,6 +52,7 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+      timeout?: CheckState["timeout"];
       index?: number;
     }
   | {
@@ -62,6 +63,7 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+      timeout?: CheckState["timeout"];
       index?: number;
     }
   | {
@@ -72,6 +74,7 @@ type CreateCheckOptions =
       name?: string;
       command?: string;
       cwd?: string;
+      timeout?: CheckState["timeout"];
       index?: number;
     };
 
@@ -84,6 +87,7 @@ export function createCheck(
     name = "demo",
     command = "echo hi",
     cwd = "/tmp/project",
+    timeout,
     output = "",
   } = options;
 
@@ -94,6 +98,7 @@ export function createCheck(
     name,
     command,
     cwd,
+    ...(timeout ? { timeout } : {}),
     index,
     startedAt,
     output,
