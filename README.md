@@ -5,7 +5,7 @@ Run tests and static analysis in parallel with human friendly, token efficient, 
 To break that down:
 
 * **Parallel**: Parallelize command execution across _one or more_ projects. Great for monorepos.
-* **Human friendly**: Clean output, even when running nested suites in parallel. This can be challenging without dedicated tooling.
+* **Human friendly**: Clean output, even when running nested suites in parallel.
 * **Token efficient**: Only failed checks render output by default. Depending on the verbosity of successful checks, this can save a lot of tokens when run through coding agents. `checks` own suite goes from 3,758 tokens to 153 (though we run a verbose test reporter for esoteric reasons). This can add up after many test runs.
 
 ![](media/screenshot.png)
